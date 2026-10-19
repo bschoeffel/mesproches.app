@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["42J56XD3PF.fr.schoeffel.MesProches"],
+        "components": [
+          { "/": "/ajouter", "comment": "Partage des dates d'un proche (données après le #)" },
+          { "/": "/ajouter/*" }
+        ]
+      }
+    ]
+  }
+}

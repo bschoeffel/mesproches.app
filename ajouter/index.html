@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mes Proches</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<main>
+  <img class="icone" src="/assets/icone.png" alt="Icône de Mes Proches">
+  <h1>Mes Proches</h1>
+
+  <div class="carte" id="fiche" hidden>
+    <p>On vous partage les dates de</p>
+    <p class="nom" id="nom"></p>
+    <p class="dates" id="dates"></p>
+  </div>
+
+  <div class="carte">
+    <h2>Ouvrez ce lien sur un iPhone où Mes Proches est installée</h2>
+    <p>La fiche s'ajoute alors à vos proches. Mes Proches est en bêta : pour l'essayer, demandez une invitation.</p>
+  </div>
+
+  <a class="bouton" href="mailto:contact@mesproches.app?subject=Tester%20Mes%20Proches">Demander une invitation</a>
+
+  <p class="pied"><a href="/">mesproches.app</a> · Les dates restent dans le lien : elles ne sont jamais envoyées à un serveur.</p>
+</main>
+<script>
+// Les données sont après le « # » : le navigateur ne les envoie jamais au serveur.
+(function () {
+  var p = new URLSearchParams(location.hash.slice(1));
+  var prenom = p.get("prenom");
+  if (!prenom) return;
+  var mois = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  function jour(v) {
+    if (!v) return null;
+    var t = v.split("-").map(Number);
+    if (!t[0] || !t[1] || t[1] > 12) return null;
+    return (t[0] === 1 ? "1er" : t[0]) + " " + mois[t[1] - 1];
+  }
+  var lignes = [];
+  var a = jour(p.get("anniv")); if (a) lignes.push("Anniversaire : " + a);
+  var f = jour(p.get("fete")); if (f) lignes.push("Fête : " + f);
+  document.getElementById("nom").textContent = [prenom, p.get("nom")].filter(Boolean).join(" ");
+  document.getElementById("dates").textContent = lignes.join(" · ");
+  document.getElementById("fiche").hidden = false;
+})();
+</script>
+</body>
+</html>
