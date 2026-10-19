@@ -9,30 +9,64 @@
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/accueil.css">
 </head>
-<body>
-<main>
-  <img class="icone" src="/assets/icone.png" alt="Icône de Mes Proches">
-  <h1>Mes Proches</h1>
-  <p class="accroche">Pour ceux qui comptent, <em>vraiment.</em></p>
+<body class="accueil">
 
-  <div class="carte">
-    <ul class="points">
-      <li><strong>Anniversaires et fêtes</strong>, au même endroit, au bon moment.</li>
-      <li><strong>Ma famille et Ma bande</strong> : ceux qui comptent, pas tout le répertoire.</li>
-      <li><strong>On prépare ensemble</strong> : qui s'occupe du cadeau, sans gâcher la surprise.</li>
-      <li><strong>Vos données restent à vous</strong>, dans votre iPhone et votre iCloud.</li>
-    </ul>
+<header class="haut">
+  <div class="marque"><img src="/assets/icone.png" alt=""><span>Mes Proches</span></div>
+  <a class="petit-bouton" href="#invitation">Essayer la bêta</a>
+</header>
+
+<section class="hero">
+  <div class="hero-texte">
+    <p class="surtitre">Anniversaires · Fêtes · Famille</p>
+    <h1>Pour ceux qui comptent, <em>vraiment.</em></h1>
+    <p class="intro">Les anniversaires et les fêtes de vos proches, au même endroit et au bon moment. Et quand il y a un cadeau à trouver, on s'organise ensemble, sans gâcher la surprise.</p>
+    <a class="bouton" href="#invitation">Demander une invitation</a>
+    <p class="mini">App iPhone gratuite · en bêta</p>
   </div>
-
-  <div class="carte">
-    <h2>Une app iPhone, en bêta</h2>
-    <p>Mes Proches est en cours de test. Pour l'essayer, écrivez-nous : nous vous enverrons le lien d'invitation.</p>
+  <div class="hero-ecrans">
+    <figure class="tel tel-arriere"><picture><source srcset="/assets/ecrans/sombre-family.jpg" media="(prefers-color-scheme: dark)"><img src="/assets/ecrans/clair-family.jpg" alt="Écran Ma famille"></picture></figure>
+    <figure class="tel tel-avant"><picture><source srcset="/assets/ecrans/sombre-bande.jpg" media="(prefers-color-scheme: dark)"><img src="/assets/ecrans/clair-bande.jpg" alt="Écran Ma bande"></picture></figure>
   </div>
+</section>
 
+<section class="bloc">
+  <div class="bloc-texte">
+    <p class="numero">01</p>
+    <h2>Plus jamais d'oubli</h2>
+    <p>Anniversaires et fêtes réunis, repris de vos Contacts. Un rappel le jour J, ou bien avant pour avoir le temps de préparer. Les grandes occasions, 40 ans, noces d'argent, sont repérées un an à l'avance.</p>
+  </div>
+  <figure class="tel"><picture><source srcset="/assets/ecrans/sombre-upcoming.jpg" media="(prefers-color-scheme: dark)"><img src="/assets/ecrans/clair-upcoming.jpg" alt="Écran À venir" loading="lazy"></picture></figure>
+</section>
+
+
+
+<section class="bloc inverse">
+  <div class="bloc-texte">
+    <p class="numero">02</p>
+    <h2>On prépare ensemble</h2>
+    <p>Une idée de cadeau, « je m'en occupe », « c'est organisé » : toute la famille voit où on en est. Sauf la personne fêtée, bien sûr. La surprise reste une surprise.</p>
+  </div>
+  <figure class="tel"><picture><source srcset="/assets/ecrans/sombre-event.jpg" media="(prefers-color-scheme: dark)"><img src="/assets/ecrans/clair-event.jpg" alt="Écran d'un anniversaire" loading="lazy"></picture></figure>
+</section>
+
+<section class="atouts">
+  <div class="atout"><span>💞</span><h3>Ma famille, Ma bande</h3><p>Les liens de chacun, et les sept amis qui comptent vraiment.</p></div>
+  <div class="atout"><span>🔔</span><h3>Le bon rappel</h3><p>Le jour J, la veille, ou des semaines avant.</p></div>
+  <div class="atout"><span>📱</span><h3>Widget et Siri</h3><p>Les prochaines dates sur l'écran d'accueil, ou à la voix.</p></div>
+  <div class="atout"><span>💌</span><h3>Partage en un geste</h3><p>Envoyez les dates d'un proche, elles s'ajoutent d'un toucher.</p></div>
+  <div class="atout"><span>🔒</span><h3>Vos données restent à vous</h3><p>Dans votre iPhone et votre iCloud. Ni publicité, ni pistage.</p></div>
+</section>
+
+<section class="invitation" id="invitation">
+  <img class="icone" src="/assets/icone.png" alt="">
+  <h2>Envie d'essayer ?</h2>
+  <p>Mes Proches est en bêta sur iPhone. Écrivez-nous, nous vous envoyons le lien d'invitation.</p>
   <a class="bouton" href="mailto:contact@mesproches.app?subject=Tester%20Mes%20Proches">Demander une invitation</a>
+</section>
 
-  <p class="pied">© 2026 Mes Proches · <a href="mailto:contact@mesproches.app">contact@mesproches.app</a></p>
-</main>
+<footer class="pied">© 2026 Mes Proches · <a href="mailto:contact@mesproches.app">contact@mesproches.app</a></footer>
 </body>
 </html>
