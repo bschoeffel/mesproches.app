@@ -11,7 +11,7 @@
   --second: #6B6B75;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --fond: #000000; --carte: #1C1C1E; --texte: #FFFFFF; --second: #D1D1D6; --poudre: #3A1F2B; }
+  :root { --fond: #000000; --carte: #1C1C1E; --texte: #FFFFFF; --second: #D1D1D1; --poudre: #3A1F2B; }
 }
 
 * { box-sizing: border-box; }
