@@ -89,7 +89,7 @@
     <input class="piege" type="text" name="site" tabindex="-1" autocomplete="off" aria-hidden="true">
     <label class="accord"><input type="checkbox" id="accord" name="accord" required> J'accepte d'être contacté par e-mail pour tester Mes Proches.</label>
     <button class="bouton" type="submit">Rejoindre la liste d'attente</button>
-    <p class="note">Votre prénom et votre e-mail servent seulement à vous inviter à la bêta. Pour être retiré de la liste : <a href="mailto:contact@mesproches.app">contact@mesproches.app</a>.</p>
+    <p class="note">Votre prénom et votre e-mail servent seulement à vous inviter à la bêta. Pour être retiré de la liste : <a href="#" class="ecrire">écrivez-nous</a>.</p>
   </form>
 </section>
 <script>
@@ -106,7 +106,7 @@
     if (!f.accord.checked) return erreur("Cochez la case pour que nous puissions vous écrire.");
     var bouton = f.querySelector("button"); bouton.disabled = true; bouton.textContent = "Envoi…";
     if (URL_LISTE.indexOf("%%") === 0) {
-      location.href = "mailto:contact@mesproches.app?subject=" + encodeURIComponent("Liste d'attente Mes Proches") +
+      location.href = "mailto:" + adresse() + "?subject=" + encodeURIComponent("Liste d'attente Mes Proches") +
         "&body=" + encodeURIComponent("Prénom : " + prenom + "\nE-mail : " + email);
       bouton.disabled = false; bouton.textContent = "Rejoindre la liste d'attente";
       return;
@@ -118,12 +118,19 @@
       })
       .catch(function () {
         bouton.disabled = false; bouton.textContent = "Rejoindre la liste d'attente";
-        erreur("L'envoi n'a pas abouti. Réessayez, ou écrivez à contact@mesproches.app.");
+        erreur("L'envoi n'a pas abouti. Réessayez dans un instant.");
       });
   });
 })();
 </script>
 
-<footer class="pied">© 2026 Mes Proches · <a href="mailto:contact@mesproches.app">contact@mesproches.app</a></footer>
+<footer class="pied">© 2026 Mes Proches · <a href="#" class="ecrire">Nous écrire</a></footer>
+<script>
+// Adresse de contact assemblée au clic (24/10/2026) : jamais écrite en clair dans la page, contre les robots à spam
+function adresse() { return ["contact", "mesproches.app"].join(String.fromCharCode(64)); }
+document.querySelectorAll(".ecrire").forEach(function (a) {
+  a.addEventListener("click", function (e) { e.preventDefault(); location.href = "mailto:" + adresse(); });
+});
+</script>
 </body>
 </html>
