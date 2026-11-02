@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confidentialité · Mes Proches</title>
+<meta name="description" content="Ce que Mes Proches garde, où, pourquoi, et comment tout effacer.">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+  main.texte { text-align: left; max-width: 680px; }
+  main.texte .entete { text-align: center; }
+  main.texte h1 { font-size: 40px; }
+  .maj { color: var(--second); text-align: center; margin: 0 0 32px; }
+  .carte h2 { font-size: 19px; margin: 0 0 10px; color: var(--texte); }
+  .carte p, .carte li { color: var(--second); }
+  .carte p + p, .carte p + ul, .carte ul + p { margin-top: 10px; }
+  .carte ul { margin: 0; padding-left: 20px; }
+  .carte li { margin: 4px 0; }
+  .carte strong { color: var(--texte); font-weight: 600; }
+  .resume { background: var(--nuit); }
+  .resume h2, .resume p, .resume li, .resume strong { color: #fff; }
+  .resume li::marker { color: var(--rose); }
+  a { color: var(--rose); }
+</style>
+</head>
+<body>
+<main class="texte">
+  <div class="entete">
+    <a href="/"><img class="icone" src="/assets/icone.png" alt="Mes Proches"></a>
+    <h1>Confidentialité</h1>
+    <p class="maj">Version bêta · mise à jour le 2 novembre 2026</p>
+  </div>
+
+  <div class="carte resume">
+    <h2>En bref</h2>
+    <ul>
+      <li>Vos proches, leurs dates, vos notes et vos préparations restent <strong>sur votre iPhone et dans votre iCloud</strong>. Nous n'y avons pas accès.</li>
+      <li>Seul ce que vous choisissez de partager passe par notre serveur, <strong>en Europe</strong> : votre carte, vos envies, vos groupes.</li>
+      <li>Ni publicité, ni revente, ni traceur.</li>
+      <li>« Supprimer mon compte », dans l'app, efface tout ce qui est sur le serveur.</li>
+    </ul>
+  </div>
+
+  <div class="carte">
+    <h2>Qui est responsable</h2>
+    <p>Mes Proches est éditée par Benoît Schoeffel, en France. Pour toute question sur vos données : <a href="#" class="ecrire">écrivez-nous</a>.</p>
+  </div>
+
+  <div class="carte">
+    <h2>Ce qui reste sur votre iPhone</h2>
+    <p>Les personnes que vous suivez, leurs anniversaires et leurs fêtes, vos notes, vos préparations de cadeaux et vos réglages. Ils sont enregistrés sur l'iPhone et copiés dans <strong>votre</strong> iCloud, chez Apple, pour revenir si vous changez d'iPhone. Mes Proches ne les envoie jamais à son serveur.</p>
+    <p>L'accès à vos Contacts et à votre Calendrier sert seulement à importer des dates et à reconnaître vos proches. Il se fait sur l'iPhone. Vos contacts ne sont jamais copiés sur notre serveur.</p>
+  </div>
+
+  <div class="carte">
+    <h2>Ce qui passe par notre serveur</h2>
+    <p>Pour partager avec vos proches, l'app ouvre un compte discret, sans e-mail ni mot de passe. Il contient :</p>
+    <ul>
+      <li><strong>Votre carte</strong> : prénom, nom, photo si vous en mettez une, dates d'anniversaire et de fête (l'année seulement si vous le choisissez).</li>
+      <li><strong>Vos envies</strong> : titre, lien, image, note. Quand quelqu'un réserve une envie, vous ne le voyez pas : la surprise reste.</li>
+      <li><strong>Vos groupes</strong> : leur nom, leurs membres, les messages, les sondages, les tâches (« Cadeau », « Organisé »).</li>
+      <li><strong>Les tirages au sort</strong> (Secret Santa) : participants, exclusions et paires. Les paires ne sont lisibles par personne, pas même par l'organisateur. Chacun ne découvre que la sienne.</li>
+      <li><strong>Pour les notifications</strong> : un identifiant technique de votre appareil.</li>
+      <li><strong>Si vous reliez votre compte à Apple</strong> : un identifiant fourni par Apple. Nous ne demandons ni votre nom ni votre adresse e-mail.</li>
+      <li><strong>Plus tard, si vous l'ajoutez</strong> : votre numéro de téléphone, visible de vous seul. Pour reconnaître vos proches dans vos Contacts, l'app envoie une empreinte chiffrée de leurs numéros, propre à chaque groupe, jamais les numéros eux-mêmes.</li>
+    </ul>
+  </div>
+
+  <div class="carte">
+    <h2>Qui voit quoi</h2>
+    <ul>
+      <li>Votre carte et vos envies : les personnes à qui vous avez envoyé votre carte, et les membres des groupes où vous les partagez.</li>
+      <li>Un groupe : ses seuls membres. La personne fêtée ne sait même pas qu'il existe.</li>
+      <li>Ces règles sont appliquées par le serveur lui-même, ligne par ligne, et vérifiées par des tests automatiques à chaque modification.</li>
+      <li>Pour faire fonctionner et réparer le service, l'éditeur peut techniquement accéder à la base. Il ne le fait que si c'est nécessaire. Le chiffrement de bout en bout des discussions est prévu.</li>
+    </ul>
+  </div>
+
+  <div class="carte">
+    <h2>Où sont les données, et avec qui nous travaillons</h2>
+    <ul>
+      <li><strong>Supabase</strong> héberge le serveur, à Francfort (Union européenne).</li>
+      <li><strong>Apple</strong> fournit iCloud, « Continuer avec Apple », les notifications et TestFlight pour la bêta.</li>
+      <li><strong>Une sauvegarde</strong> de la base est faite chaque nuit sur un serveur de l'éditeur, en France. Elle est gardée 30 jours.</li>
+      <li>Ce site est hébergé par <strong>GitHub Pages</strong>. Le formulaire de liste d'attente enregistre votre prénom et votre e-mail dans un tableau <strong>Google</strong>, seulement pour vous inviter à la bêta.</li>
+    </ul>
+    <p>Ces prestataires agissent pour notre compte et ne peuvent pas utiliser vos données pour eux-mêmes.</p>
+  </div>
+
+  <div class="carte">
+    <h2>Pourquoi, et combien de temps</h2>
+    <p>Ces données servent uniquement à faire fonctionner Mes Proches : vous rappeler les dates, partager votre carte et vos envies, organiser un cadeau ou un tirage à plusieurs. C'est la raison pour laquelle vous utilisez l'app (exécution du service).</p>
+    <p>Elles sont gardées tant que votre compte existe. « Supprimer mon compte » (Réglages › Compte) les efface aussitôt du serveur. Elles disparaissent des sauvegardes au plus tard 30 jours après. Si vous quittez un groupe, vos anciens messages y restent, sans votre nom si vous supprimez votre compte.</p>
+    <p>Les enfants ne créent pas de compte. Dans un tirage au sort, un parent peut ajouter son enfant par son seul prénom, et découvre le tirage à sa place.</p>
+  </div>
+
+  <div class="carte">
+    <h2>Vos droits</h2>
+    <p>Vous pouvez demander à consulter, corriger, exporter ou effacer vos données, ou vous opposer à leur usage : <a href="#" class="ecrire">écrivez-nous</a>, nous répondons sous un mois. Vous pouvez aussi saisir la <a href="https://www.cnil.fr/fr/plaintes">CNIL</a>.</p>
+  </div>
+
+  <p class="pied"><a href="/">mesproches.app</a> · Cette page évoluera avec l'app. Nous vous préviendrons de tout changement important.</p>
+</main>
+<script>
+// Adresse de contact assemblée au clic : jamais écrite en clair dans la page, contre les robots à spam
+function adresse() { return ["contact", "mesproches.app"].join(String.fromCharCode(64)); }
+document.querySelectorAll(".ecrire").forEach(function (a) {
+  a.addEventListener("click", function (e) { e.preventDefault(); location.href = "mailto:" + adresse(); });
+});
+</script>
+</body>
+</html>
