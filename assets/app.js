@@ -226,12 +226,14 @@
     zone.appendChild(el("p")).appendChild(retour);
   }
 
+  var RAPIDES = ["❤️", "😂", "😮", "😢", "👍", "🎉"];
+
   async function dessinerFil(filZone, uid, gid, noms) {
     var r = await sb.from("messages").select("id,kind,body,sender_id,ref_id,created_at,deleted_at")
       .eq("group_id", gid).order("created_at", { ascending: false }).limit(300);
     var fil = (r.data || []).reverse();
     var ids = fil.map(function (m) { return m.id; });
-    var coeurs = ids.length ? ((await sb.from("reactions").select("message_id,profile_id").in("message_id", ids)).data || []) : [];
+    var coeurs = ids.length ? ((await sb.from("reactions").select("message_id,profile_id,emoji").in("message_id", ids)).data || []) : [];
     var pids = fil.filter(function (m) { return m.kind === "poll" && m.ref_id; }).map(function (m) { return m.ref_id; });
     var sondages = {}, options = [], votes = [];
     if (pids.length) {
@@ -252,17 +254,23 @@
         bulle.appendChild(el("small", null, heure(m)));
         ligne.appendChild(bulle);
         var mc = coeurs.filter(function (c) { return c.message_id === m.id; });
-        var aime = mc.some(function (c) { return c.profile_id === uid; });
         if (!m.deleted_at) {
           var outils = el("div", "outils");
-          var coeur = el("button", "coeur" + (aime ? " on" : ""), "❤️" + (mc.length ? " " + mc.length : ""));
-          coeur.title = aime ? "Retirer" : "J'aime";
-          coeur.onclick = async function () {
-            if (aime) await sb.from("reactions").delete().eq("message_id", m.id).eq("profile_id", uid).eq("emoji", "❤️");
-            else await sb.from("reactions").insert({ message_id: m.id, profile_id: uid, emoji: "❤️" });
-            dessinerFil(filZone, uid, gid, noms);
-          };
-          outils.appendChild(coeur);
+          // Les 6 réactions rapides, puis celles mises depuis l'iPhone avec « + »
+          var emojis = RAPIDES.slice();
+          mc.forEach(function (c) { if (emojis.indexOf(c.emoji) < 0) emojis.push(c.emoji); });
+          emojis.forEach(function (e) {
+            var n = mc.filter(function (c) { return c.emoji === e; }).length;
+            var aMoi = mc.some(function (c) { return c.emoji === e && c.profile_id === uid; });
+            var b = el("button", "coeur" + (aMoi ? " on" : n ? " mis" : ""), e + (n ? " " + n : ""));
+            b.title = aMoi ? "Retirer" : "Réagir";
+            b.onclick = async function () {
+              if (aMoi) await sb.from("reactions").delete().eq("message_id", m.id).eq("profile_id", uid).eq("emoji", e);
+              else await sb.from("reactions").insert({ message_id: m.id, profile_id: uid, emoji: e });
+              dessinerFil(filZone, uid, gid, noms);
+            };
+            outils.appendChild(b);
+          });
           if (mien) {
             var suppr = el("button", "lien-gris", "Supprimer");
             suppr.onclick = async function () {
