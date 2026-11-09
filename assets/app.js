@@ -107,12 +107,17 @@
     };
   }
 
-  // « 06 12 34 56 78 », « +33 6… », « 0033 6… » → « +33612345678 » (comme l'app)
+  // Redressé comme dans l'app (10/11/2026) : « 06 12… », « 6 12… », « +33 6… », « +33 (0)6… », « 0033 6… » → « +33612345678 »
   function e164(brut) {
-    var d = (brut || "").replace(/[^0-9+]/g, "");
-    if (d.indexOf("00") === 0) d = "+" + d.slice(2);
-    if (d.charAt(0) === "0" && d.length === 10) d = "+33" + d.slice(1);
-    return /^\+[1-9][0-9]{6,14}$/.test(d) ? d : null;
+    var t = (brut || "").trim(), d = t.replace(/[^0-9]/g, "");
+    if (t.charAt(0) === "+") {}
+    else if (d.indexOf("00") === 0) d = d.slice(2);
+    else if (d.length === 10 && d.charAt(0) === "0") d = "33" + d.slice(1);
+    else if (d.length === 9 && d.charAt(0) !== "0") d = "33" + d;
+    else return null;
+    if (d.length === 12 && d.indexOf("330") === 0) d = "33" + d.slice(3);
+    var e = "+" + d;
+    return /^\+[1-9][0-9]{6,14}$/.test(e) ? e : null;
   }
 
   function attente(zone, nom) {
