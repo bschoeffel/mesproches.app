@@ -53,9 +53,18 @@
     if (g.my_status === "removed") return pasOuvert(zone);
     vide(zone);
     var c = el("div", "centre");
-    c.appendChild(Object.assign(el("img", "icone"), { src: "/assets/icone.png", alt: "" }));
+    // Photo et description du groupe (9/11/2026, maquette validée) : lues par la fonction « apercu-invitation »,
+    // qui vérifie le lien ; sans photo, l'icône de l'app ; sans description, la phrase d'accueil.
+    var icone = Object.assign(el("img", "icone"), { src: "/assets/icone.png", alt: "" });
+    c.appendChild(icone);
     c.appendChild(el("h1", null, (g.inviter ? g.inviter + " vous invite" : "On vous invite") + " à préparer « " + g.group_name + " »"));
-    c.appendChild(el("p", "sous", "Un groupe sans la personne fêtée, pour organiser la surprise ensemble : idées, cadeau, qui s'occupe de quoi."));
+    var accueil = el("p", "sous", "Un groupe sans la personne fêtée, pour organiser la surprise ensemble : idées, cadeau, qui s'occupe de quoi.");
+    c.appendChild(accueil);
+    sb.functions.invoke("apercu-invitation", { body: { token: token } }).then(function (r) {
+      var d = r && r.data; if (!d) return;
+      if (d.photo) { var im = el("img", "photo-groupe"); im.alt = ""; im.src = d.photo; c.replaceChild(im, icone); }
+      if (d.description) { var p = el("p", "description-groupe", d.description); c.replaceChild(p, accueil); }
+    }).catch(function () {});
     c.appendChild(el("p", "note", g.members + (g.members > 1 ? " membres · " : " membre · ") + dateLongue(jour(g.event_date)) + " · " + jMoins(jour(g.event_date))));
     zone.appendChild(c);
 
@@ -175,9 +184,15 @@
       zone.appendChild(el("h1", null, g.name));
     } else zone.appendChild(el("h1", null, (g.emoji || "🎉") + " " + g.name));
 
-    var membres = (await sb.from("group_members").select("profile_id,status").eq("group_id", gid).eq("status", "active")).data || [];
+    var membres = (await sb.from("group_members").select("profile_id,status,role").eq("group_id", gid).eq("status", "active")).data || [];
+    var admin = membres.some(function (m) { return m.profile_id === uid && m.role === "admin"; });
     zone.appendChild(el("p", "sous", membres.length + (membres.length > 1 ? " membres · " : " membre · ") + dateLongue(d) + " · " + jMoins(d)));
     if (g.description) zone.appendChild(el("p", "description-groupe", g.description));
+    if (admin) {
+      var mod = el("a", "lien-modifier", "✎ Modifier le groupe"); mod.href = "#";
+      mod.onclick = function (e) { e.preventDefault(); modifierGroupe(zone, uid, gid, g); };
+      zone.appendChild(mod);
+    }
     var noms = {}; var ids = membres.map(function (m) { return m.profile_id; });
     if (ids.length) ((await sb.from("profiles").select("id,first_name,last_name,avatar_path").in("id", ids)).data || []).forEach(function (p) { noms[p.id] = [p.first_name, p.last_name].filter(Boolean).join(" ") || "Un proche"; AVATARS[p.id] = p.avatar_path || null; });
 
@@ -254,6 +269,74 @@
   }
 
   // Notifications (9/11/2026) : après chaque message, les membres qui ont l'app sont prévenus sur leur iPhone.
+  // Modifier le groupe depuis le site (admins, 9/11/2026, maquette validée) : photo, nom, description.
+  function reduire(fichier) {
+    return new Promise(function (ok, ko) {
+      var img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, 800 / Math.max(img.width, img.height));
+        var cv = document.createElement("canvas"); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(img.src);
+        cv.toBlob(function (b) { b ? ok(b) : ko(); }, "image/jpeg", 0.85);
+      };
+      img.onerror = ko;
+      img.src = URL.createObjectURL(fichier);
+    });
+  }
+
+  function modifierGroupe(zone, uid, gid, g) {
+    vide(zone);
+    var retour = el("a", "lien-rose", "‹ " + g.name); retour.href = "#g=" + gid;
+    retour.onclick = function (e) { e.preventDefault(); groupe(zone, uid, gid); };
+    zone.appendChild(retour);
+    zone.appendChild(el("h1", null, "Modifier le groupe"));
+    var bloc = el("div", "centre");
+    var apercu = g.photo_path ? el("img", "photo-groupe") : el("div", "photo-groupe vide", g.emoji || "🎉");
+    if (g.photo_path) photo(g.photo_path).then(function (u) { if (u) apercu.src = u; });
+    bloc.appendChild(apercu);
+    var fichier = Object.assign(el("input"), { type: "file", accept: "image/*" }); fichier.style.display = "none";
+    var choisir = el("a", "lien-modifier", g.photo_path ? "Changer la photo" : "Ajouter une photo"); choisir.href = "#";
+    choisir.onclick = function (e) { e.preventDefault(); fichier.click(); };
+    bloc.appendChild(fichier); bloc.appendChild(choisir);
+    var nouvelle = null, retirer = false;
+    var lienRetirer = el("a", "lien-discret", "Retirer la photo"); lienRetirer.href = "#";
+    lienRetirer.onclick = function (e) { e.preventDefault(); retirer = true; nouvelle = null; var v = el("div", "photo-groupe vide", g.emoji || "🎉"); bloc.replaceChild(v, apercu); apercu = v; lienRetirer.remove(); };
+    if (g.photo_path) bloc.appendChild(lienRetirer);
+    fichier.onchange = async function () {
+      if (!fichier.files[0]) return;
+      try { nouvelle = await reduire(fichier.files[0]); retirer = false; } catch (e) { return; }
+      var v = el("img", "photo-groupe"); v.src = URL.createObjectURL(nouvelle); bloc.replaceChild(v, apercu); apercu = v;
+    };
+    zone.appendChild(bloc);
+    function champ(etiquette, valeur, long, max) {
+      var c = el("div", "champ"); c.appendChild(el("label", null, etiquette));
+      var i = long ? el("textarea") : el("input"); i.value = valeur || ""; i.maxLength = max; if (long) i.rows = 3;
+      c.appendChild(i); zone.appendChild(c); return i;
+    }
+    var nom = champ("Nom du groupe", g.name, false, 80);
+    var desc = champ("Description · visible de tous les membres", g.description, true, 500);
+    var b = el("button", "bouton bouton-sombre", "Enregistrer");
+    var erreur = el("p", "note");
+    b.onclick = async function () {
+      var titre = nom.value.trim();
+      if (!titre) { erreur.textContent = "Le groupe a besoin d'un nom."; return; }
+      b.disabled = true; erreur.textContent = "";
+      var maj = { name: titre.slice(0, 80), description: desc.value.trim().slice(0, 500) || null };
+      if (nouvelle) {
+        var chemin = gid + "/" + crypto.randomUUID() + ".jpg";
+        var up = await sb.storage.from("discussion").upload(chemin, nouvelle, { contentType: "image/jpeg" });
+        if (up.error) { b.disabled = false; erreur.textContent = "La photo n'a pas pu être envoyée. Réessayez."; return; }
+        maj.photo_path = chemin;
+      } else if (retirer) maj.photo_path = null;
+      var r = await sb.from("groups").update(maj).eq("id", gid).select("id");
+      if (r.error || !r.data || !r.data.length) { b.disabled = false; erreur.textContent = "Seuls les administrateurs peuvent modifier le groupe."; return; }
+      groupe(zone, uid, gid);
+    };
+    zone.appendChild(b); zone.appendChild(erreur);
+    zone.appendChild(el("p", "note centre", "Seuls les administrateurs voient ce lien."));
+  }
+
   function prevenir(corps) { sb.functions.invoke("notifier", { body: corps }).catch(function () {}); }
   async function ecrire(ligne) {
     var r = await sb.from("messages").insert(ligne).select("id").single();
