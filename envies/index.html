@@ -3,40 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mes Proches</title>
+<title>Envies · Mes Proches</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/app.css">
 </head>
-<body>
-<main>
-  <img class="icone" src="/assets/icone.png" alt="Icône de Mes Proches">
-  <h1>Mes Proches</h1>
-
-  <div class="carte" id="fiche" hidden>
-    <p>On vous partage les envies de</p>
-    <p class="nom" id="nom"></p>
+<body data-page="envies">
+<main class="app">
+  <div id="app">
+    <div class="centre">
+      <img class="icone" src="/assets/icone.png" alt="Icône de Mes Proches">
+      <h1>Mes Proches</h1>
+      <p class="sous">Chargement…</p>
+    </div>
   </div>
-
-  <div class="carte">
-    <h2>Ouvrez ce lien sur un iPhone où Mes Proches est installée</h2>
-    <p>Ses envies s'ouvrent alors sur sa fiche, et vous pouvez dire « Je le prends » sans que la personne le sache. Mes Proches est en bêta : pour l'essayer, inscrivez-vous sur la liste d'attente.</p>
-  </div>
-
-  <a class="bouton" href="/#liste-attente">Rejoindre la liste d'attente</a>
-
-  <p class="pied"><a href="/">mesproches.app</a> · Les envies ne s'affichent que dans l'app, pour ceux qui ont reçu ce lien.</p>
+  <p class="pied centre"><a href="/">mesproches.app</a> · <a href="/confidentialite/">Confidentialité</a></p>
 </main>
-<script>
-// Le prénom est après le « # » : le navigateur ne l'envoie jamais au serveur. Le jeton n'est lu que par l'app.
-(function () {
-  var p = new URLSearchParams(location.hash.slice(1));
-  var prenom = p.get("prenom");
-  if (!prenom) return;
-  document.getElementById("nom").textContent = [prenom, p.get("nom")].filter(Boolean).join(" ");
-  document.getElementById("fiche").hidden = false;
-})();
-</script>
+<script src="/assets/vendor/supabase-2.117.3.js"></script>
+<script src="/assets/app.js"></script>
+<script>MesProches.envies();</script>
 </body>
 </html>

@@ -1,0 +1,44 @@
+/* App web (étape 4, O17) : rejoindre un groupe, le groupe, le Secret Santa, les envies. */
+:root { --vert: #1E8E3E; --vert-fond: #E6F4EA; --sep: rgba(128,128,128,.22); }
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --fond: #0B0A16; --carte: #1C1C22; --texte: #F4F4F7; --second: #A9A9B3;
+    --poudre: #2A1520; --vert: #5BD27B; --vert-fond: #173322;
+  }
+  body { background: linear-gradient(var(--poudre), var(--fond) 420px) no-repeat, var(--fond); }
+  .bouton { background: #fff; color: #0D0C22; }
+}
+main.app { text-align: left; padding-top: 40px; }
+main.app .centre { text-align: center; }
+main.app h1 { font-size: 36px; line-height: 1.1; }
+.sous { color: var(--second); margin: 6px 0 22px; }
+.visages { display: flex; justify-content: center; margin: 14px 0 6px; }
+.visage { width: 36px; height: 36px; border-radius: 50%; background: var(--nuit); color: #fff; font: 600 12px/36px -apple-system, sans-serif;
+  text-align: center; border: 2px solid var(--fond); margin-left: -8px; }
+@media (prefers-color-scheme: dark) { .visage { background: #2C2C3A; } }
+.champ { background: var(--carte); border-radius: 16px; padding: 10px 14px; margin: 0 0 10px; }
+.champ label { display: block; font-size: 12px; color: var(--second); }
+.champ input { width: 100%; border: 0; background: transparent; font: inherit; font-size: 17px; color: var(--texte); outline: none; padding: 2px 0; }
+.bouton { width: 100%; border: 0; font: inherit; font-weight: 600; cursor: pointer; text-align: center; }
+.bouton[disabled] { opacity: .5; }
+.lien-rose { color: var(--rose); text-decoration: none; font-weight: 600; background: none; border: 0; font: inherit; cursor: pointer; padding: 0; }
+.puces { display: flex; gap: 8px; overflow-x: auto; margin: 4px 0 16px; }
+.puce { white-space: nowrap; font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 999px; background: var(--carte); }
+.puce.ok { color: var(--vert); background: var(--vert-fond); }
+.liste { background: var(--carte); border-radius: 18px; margin: 0 0 16px; overflow: hidden; }
+.ligne { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.ligne + .ligne { border-top: .5px solid var(--sep); }
+.ligne .grand { flex: 1; }
+.ligne small { display: block; color: var(--second); font-size: 12px; }
+.ico { width: 36px; height: 36px; border-radius: 10px; background: var(--poudre); display: grid; place-items: center; font-size: 18px; flex: none; }
+.titre-section { font-size: 15px; color: var(--second); margin: 18px 4px 6px; }
+.enveloppe { background: linear-gradient(#1B1A3A, #3A1F3D); color: #fff; border-radius: 24px; padding: 26px 18px; text-align: center; margin: 0 0 16px; }
+.enveloppe .rond { width: 84px; height: 84px; border-radius: 50%; background: #FCE8F0; color: var(--rose); font: 600 30px/84px -apple-system, sans-serif; margin: 12px auto; }
+.enveloppe h2 { font-family: "MP Titre", Georgia, serif; font-weight: 400; font-size: 30px; margin: 4px 0 10px; }
+.enveloppe .puce { background: rgba(255,255,255,.15); color: #fff; }
+.note { font-size: 13px; color: var(--second); padding: 0 4px; }
+.erreur { color: #D92D20; margin-top: 10px; }
+.bandeau { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--poudre); color: var(--rose);
+  border-radius: 14px; padding: 10px 14px; font-size: 14px; margin: 0 0 14px; }
+.cache { display: none !important; }
