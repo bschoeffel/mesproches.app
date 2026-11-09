@@ -381,6 +381,13 @@
     return a;
   }
 
+  function vignette(chemin) {
+    var t = chemin.replace(/\.jpg$/, "_t.jpg");
+    if (!PHOTOS[t]) PHOTOS[t] = sb.storage.from("discussion").download(t)
+      .then(function (r) { return r.data ? URL.createObjectURL(r.data) : photo(chemin); }, function () { return photo(chemin); });
+    return PHOTOS[t];
+  }
+
   async function dessinerFil(filZone, uid, gid, noms) {
     var r = await sb.from("messages").select("id,kind,body,sender_id,ref_id,created_at,deleted_at,photo_path,link_url,link_title,link_description,link_site,link_image_path")
       .eq("group_id", gid).order("created_at", { ascending: false }).limit(300);
@@ -411,7 +418,9 @@
           bulle.classList.add("avec-photo");
           var img = el("img", "photo");
           img.alt = "Photo" + (noms[m.sender_id] && !mien ? " de " + noms[m.sender_id] : "");
-          photo(m.photo_path).then(function (url) { if (url) { img.src = url; img.onclick = function () { window.open(url, "_blank"); }; } });
+          // La vignette dans la bulle ; un clic ouvre la photo en haute qualité, zoomable par le navigateur (9/11/2026)
+          vignette(m.photo_path).then(function (url) { if (url) img.src = url; });
+          (function (chemin) { img.onclick = function () { photo(chemin).then(function (url) { if (url) window.open(url, "_blank"); }); }; })(m.photo_path);
           bulle.appendChild(img);
         }
         // Aperçu du lien, lu par l'expéditeur (9/11/2026)
