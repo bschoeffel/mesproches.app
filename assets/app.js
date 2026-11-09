@@ -668,7 +668,7 @@
   // ───────────────────────── Les envies d'un proche ─────────────────────────
   async function envies() {
     var token = parametre("t"), zone = $("app");
-    if (!token || !/^[0-9a-f]{24}$/.test(token)) return;
+    if (!token || !/^[0-9a-f]{24}$/.test(token)) return pasValable(zone);
     var uid;
     try { uid = (await session()).id; } catch (e) { return panne(zone); }
     var r = await sb.rpc("open_wishes", { p_token: token });
@@ -684,6 +684,29 @@
     else zone.appendChild(el("p", "note", "Pas encore d'envie : revenez plus tard, la liste se met à jour toute seule."));
   }
 
-  window.MesProches = { rejoindre: rejoindre, groupes: groupes, envies: envies };
+  // « Philippine aimerait voir votre liste d'envies » (10/11/2026, maquette demande-envies validée) :
+  // le lien « Demander sa liste » ouvert sans l'app. Pour l'instant : la bêta ; bientôt, créer sa liste ici.
+  async function demande() {
+    var token = parametre("d"), zone = $("app");
+    if (!token || !/^[0-9a-f]{24}$/.test(token)) return pasValable(zone);
+    try { await session(); } catch (e) { return panne(zone); }
+    var r = await sb.rpc("wish_request_preview", { p_token: token });
+    var qui = r.data && r.data[0];
+    if (!qui) return pasValable(zone);
+    var prenom = qui.first_name || "Votre proche";
+    vide(zone);
+    var c = el("div", "centre");
+    c.appendChild(Object.assign(el("img", "icone"), { src: "/assets/icone.png", alt: "" }));
+    c.appendChild(el("h1", null, prenom + " aimerait voir votre liste d'envies"));
+    c.appendChild(el("p", "sous", "Mes Proches réunit les anniversaires et les envies de ceux qui comptent. Votre liste se partage avec " + prenom + " en un toucher, depuis l'app."));
+    c.appendChild(el("p", "note", "L'app est en bêta sur iPhone, sur invitation."));
+    var b = Object.assign(el("a", "bouton", "Rejoindre la bêta"), { href: "/#liste-attente" });
+    b.style.marginTop = "14px"; b.style.display = "inline-block";
+    c.appendChild(b);
+    c.appendChild(el("p", "note", "Bientôt : créer sa liste directement ici, sans installer l'app."));
+    zone.appendChild(c);
+  }
+
+  window.MesProches = { rejoindre: rejoindre, groupes: groupes, envies: envies, demande: demande };
   window.addEventListener("hashchange", function () { if (document.body.dataset.page === "groupes") groupes(); });
 })();
