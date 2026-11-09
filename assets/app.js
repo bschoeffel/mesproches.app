@@ -56,7 +56,7 @@
     c.appendChild(Object.assign(el("img", "icone"), { src: "/assets/icone.png", alt: "" }));
     c.appendChild(el("h1", null, (g.inviter ? g.inviter + " vous invite" : "On vous invite") + " à préparer « " + g.group_name + " »"));
     c.appendChild(el("p", "sous", "Un groupe sans la personne fêtée, pour organiser la surprise ensemble : idées, cadeau, qui s'occupe de quoi."));
-    c.appendChild(el("p", "note", g.members + " membres · " + dateLongue(jour(g.event_date)) + " · " + jMoins(jour(g.event_date))));
+    c.appendChild(el("p", "note", g.members + (g.members > 1 ? " membres · " : " membre · ") + dateLongue(jour(g.event_date)) + " · " + jMoins(jour(g.event_date))));
     zone.appendChild(c);
 
     var profil = await monProfil(uid);
@@ -153,43 +153,14 @@
     zone.appendChild(el("h1", null, (g.emoji || "🎉") + " " + g.name));
 
     var membres = (await sb.from("group_members").select("profile_id,status").eq("group_id", gid).eq("status", "active")).data || [];
-    zone.appendChild(el("p", "sous", membres.length + " membres · " + dateLongue(d) + " · " + jMoins(d)));
+    zone.appendChild(el("p", "sous", membres.length + (membres.length > 1 ? " membres · " : " membre · ") + dateLongue(d) + " · " + jMoins(d)));
     var noms = {}; var ids = membres.map(function (m) { return m.profile_id; });
-    if (ids.length) ((await sb.from("profiles").select("id,first_name,last_name").in("id", ids)).data || []).forEach(function (p) { noms[p.id] = p.first_name; });
+    if (ids.length) ((await sb.from("profiles").select("id,first_name,last_name").in("id", ids)).data || []).forEach(function (p) { noms[p.id] = [p.first_name, p.last_name].filter(Boolean).join(" ") || "Un proche"; });
 
+    // Groupe allégé (9/11/2026, comme l'app) : cadeau, organisation et Secret Santa passent par le « + »
     var taches = (await sb.from("group_tasks").select("kind,assignee_id").eq("group_id", gid)).data || [];
-    var puces = el("div", "puces");
-    [["gift", "🎁 Cadeau"], ["organisation", "🗓️ Organisé"]].forEach(function (k) {
-      var t = taches.filter(function (x) { return x.kind === k[0]; })[0];
-      var qui = t && t.assignee_id ? (t.assignee_id === uid ? "vous" : noms[t.assignee_id] || "pris") : "à prendre";
-      var p = el("span", "puce" + (t && t.assignee_id ? " ok" : ""), k[1] + " : " + qui);
-      if (!t || !t.assignee_id || t.assignee_id === uid) {
-        p.style.cursor = "pointer";
-        p.title = t && t.assignee_id === uid ? "Je ne m'en occupe plus" : "Je m'en occupe";
-        p.onclick = async function () {
-          var moi = !(t && t.assignee_id === uid);
-          await sb.from("group_tasks").update({ assignee_id: moi ? uid : null, status: moi ? "taken" : "open" }).eq("group_id", gid).eq("kind", k[0]);
-          var prenom = (await monProfil(uid)).first_name || "Quelqu'un";
-          await ecrire({ group_id: gid, sender_id: uid, kind: "action",
-            body: prenom + (moi ? " s'occupe " : " ne s'occupe plus ") + (k[0] === "gift" ? "du cadeau" : "de l'organisation") });
-          groupe(zone, uid, gid);
-        };
-      }
-      puces.appendChild(p);
-    });
-    zone.appendChild(puces);
-
-    // Secret Santa
-    if (g.event.kind === "christmas") {
-      var tirage = (await sb.from("santa_draws").select("id,budget_cents,exchange_date,status").eq("group_id", gid).maybeSingle()).data;
-      if (tirage && tirage.status === "drawn") {
-        var bt = el("button", "bouton", "🎅 Découvrir ma personne");
-        bt.onclick = function () { santa(zone, uid, gid, tirage, g.name); };
-        zone.appendChild(bt);
-      } else if (tirage) {
-        zone.appendChild(el("p", "note", "🎅 Le tirage du Secret Santa n'est pas encore fait."));
-      }
-    }
+    var tirage = g.event.kind === "christmas"
+      ? (await sb.from("santa_draws").select("id,budget_cents,exchange_date,status").eq("group_id", gid).maybeSingle()).data : null;
 
     // Envies publiées dans le groupe
     var publiees = ((await sb.from("group_wishes").select("wish_id").eq("group_id", gid)).data || []).map(function (x) { return x.wish_id; });
@@ -201,12 +172,33 @@
     }
 
     // La discussion
-    zone.appendChild(el("p", "titre-section", "Le fil"));
     var filZone = el("div", "fil"); zone.appendChild(filZone);
     await dessinerFil(filZone, uid, gid, noms);
     var saisie = el("form", "saisie");
     var champ = el("textarea"); champ.rows = 1; champ.placeholder = "Message"; champ.maxLength = 4000;
     var envoyer = el("button", "bouton", "Envoyer"); envoyer.type = "submit";
+    // Le « + » : Secret Santa (Noël), cadeau, organisation
+    var plus = el("button", "plus", "+"); plus.type = "button"; plus.title = "Ajouter au fil";
+    var menu = el("div", "menu-plus cache");
+    function entree(texte, actif, action) {
+      var b = el("button", null, texte); b.type = "button"; b.disabled = !actif;
+      b.onclick = async function () { menu.classList.add("cache"); await action(); };
+      menu.appendChild(b);
+    }
+    if (tirage && tirage.status === "drawn") entree("🎅 Découvrir ma personne", true, function () { santa(zone, uid, gid, tirage, g.name); });
+    else if (tirage) entree("🎅 Secret Santa · le tirage n'est pas encore fait", false, function () {});
+    [["gift", "du cadeau", "🎁"], ["organisation", "de l'organisation", "🗓️"]].forEach(function (k) {
+      var t = taches.filter(function (x) { return x.kind === k[0]; })[0];
+      var mienne = t && t.assignee_id === uid, prise = t && t.assignee_id && !mienne;
+      entree(k[2] + (mienne ? " Je ne m'occupe plus " : " Je m'occupe ") + k[1], !prise, async function () {
+        await sb.from("group_tasks").update({ assignee_id: mienne ? null : uid, status: mienne ? "open" : "taken" }).eq("group_id", gid).eq("kind", k[0]);
+        var prenom = (await monProfil(uid)).first_name || "Quelqu'un";
+        await ecrire({ group_id: gid, sender_id: uid, kind: "action", body: prenom + (mienne ? " ne s'occupe plus " : " s'occupe ") + k[1] });
+        groupe(zone, uid, gid);
+      });
+    });
+    plus.onclick = function () { menu.classList.toggle("cache"); };
+    saisie.appendChild(menu); saisie.appendChild(plus);
     saisie.appendChild(champ); saisie.appendChild(envoyer);
     champ.onkeydown = function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saisie.requestSubmit(); } };
     saisie.onsubmit = async function (e) {
@@ -290,7 +282,7 @@
       if (m.kind === "text") {
         var ligne = el("div", "bulle-ligne" + (mien ? " mien" : ""));
         var bulle = el("div", "bulle" + (mien ? " mien" : ""));
-        if (!mien && noms[m.sender_id]) bulle.appendChild(el("strong", "auteur", noms[m.sender_id]));
+        if (noms[m.sender_id]) bulle.appendChild(el("strong", "auteur", noms[m.sender_id]));
         if (m.photo_path && !m.deleted_at) {
           // Photo envoyée depuis l'iPhone (9/11/2026) : un clic l'ouvre en grand
           bulle.classList.add("avec-photo");
