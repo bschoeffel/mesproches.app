@@ -85,6 +85,7 @@
         err.classList.remove("cache"); bouton.disabled = false; bouton.textContent = "Rejoindre le groupe"; return;
       }
       if (r.data === "active") { memoriser(g.group_id); location.href = "/groupes/#g=" + g.group_id; return; }
+      prevenir({ event: "join_request", group_id: g.group_id });
       attente(zone, g.group_name);
     };
   }
@@ -169,7 +170,7 @@
           var moi = !(t && t.assignee_id === uid);
           await sb.from("group_tasks").update({ assignee_id: moi ? uid : null, status: moi ? "taken" : "open" }).eq("group_id", gid).eq("kind", k[0]);
           var prenom = (await monProfil(uid)).first_name || "Quelqu'un";
-          await sb.from("messages").insert({ group_id: gid, sender_id: uid, kind: "action",
+          await ecrire({ group_id: gid, sender_id: uid, kind: "action",
             body: prenom + (moi ? " s'occupe " : " ne s'occupe plus ") + (k[0] === "gift" ? "du cadeau" : "de l'organisation") });
           groupe(zone, uid, gid);
         };
@@ -212,7 +213,7 @@
       e.preventDefault();
       var texte = champ.value.trim(); if (!texte) return;
       champ.value = "";
-      await sb.from("messages").insert({ group_id: gid, sender_id: uid, kind: "text", body: texte });
+      await ecrire({ group_id: gid, sender_id: uid, kind: "text", body: texte });
       dessinerFil(filZone, uid, gid, noms);
     };
     zone.appendChild(saisie);
@@ -234,6 +235,14 @@
     }, 60000);
     var retour = el("a", "lien-rose", "‹ Mes groupes"); retour.href = "#"; retour.onclick = function () { setTimeout(groupes, 0); };
     zone.appendChild(el("p")).appendChild(retour);
+  }
+
+  // Notifications (9/11/2026) : après chaque message, les membres qui ont l'app sont prévenus sur leur iPhone.
+  function prevenir(corps) { sb.functions.invoke("notifier", { body: corps }).catch(function () {}); }
+  async function ecrire(ligne) {
+    var r = await sb.from("messages").insert(ligne).select("id").single();
+    if (r.data) prevenir({ event: "message", group_id: ligne.group_id, message_id: r.data.id });
+    return r;
   }
 
   var RAPIDES = ["❤️", "😂", "😮", "😢", "👍", "🎉"];
@@ -368,7 +377,7 @@
           await sb.from("wish_reservations").insert({ wish_id: w.id, reserved_by: uid });
           if (gid) {
             var prenom = (await monProfil(uid)).first_name || "Quelqu'un";
-            await sb.from("messages").insert({ group_id: gid, sender_id: uid, kind: "action", body: prenom + " a réservé « " + w.title + " »", ref_id: w.id });
+            await ecrire({ group_id: gid, sender_id: uid, kind: "action", body: prenom + " a réservé « " + w.title + " »", ref_id: w.id });
           }
           recharger();
         };
