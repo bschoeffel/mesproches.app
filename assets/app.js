@@ -127,7 +127,7 @@
     try { uid = (await session()).id; } catch (e) { return panne(zone); }
     var gid = parametre("g");
     if (gid) return groupe(zone, uid, gid);
-    var r = await sb.from("groups").select("id,name,emoji,archived_at,event:events(title,event_date)");
+    var r = await sb.from("groups").select("id,name,emoji,archived_at,photo_path,event:events(title,event_date)");
     // Point « nouveau » (comme l'app) : messages des autres depuis ma dernière visite dans ce navigateur
     var actifs = (r.data || []).filter(function (g) { return !g.archived_at; });
     var lus = luLe(), maintenant = new Date().toISOString(), nonLus = {};
@@ -144,7 +144,8 @@
     var liste = el("div", "liste");
     actifs.forEach(function (g) {
       var a = el("a", "ligne"); a.href = "#g=" + g.id; a.style.color = "inherit"; a.style.textDecoration = "none";
-      a.appendChild(el("div", "ico", g.emoji || "🎉"));
+      if (g.photo_path) { var ic = el("img", "ico ico-photo"); ic.alt = ""; photo(g.photo_path).then(function (url) { if (url) ic.src = url; }); a.appendChild(ic); }
+      else a.appendChild(el("div", "ico", g.emoji || "🎉"));
       var t = el("div", "grand"); t.appendChild(el("strong", null, g.name));
       t.appendChild(el("small", null, dateLongue(jour(g.event.event_date)) + " · " + jMoins(jour(g.event.event_date)))); a.appendChild(t);
       var n = nonLus[g.id] || 0;
@@ -160,16 +161,23 @@
 
   async function groupe(zone, uid, gid) {
     memoriser(gid); marquerLu(gid);
-    var g = (await sb.from("groups").select("id,name,emoji,event:events(kind,title,event_date)").eq("id", gid).maybeSingle()).data;
+    var g = (await sb.from("groups").select("id,name,emoji,photo_path,description,event:events(kind,title,event_date)").eq("id", gid).maybeSingle()).data;
     vide(zone);
     if (!g) { zone.appendChild(el("p", "sous", "Ce groupe ne vous est pas (ou plus) ouvert.")); return; }
     var d = jour(g.event.event_date);
     var b = el("div", "bandeau"); b.appendChild(el("span", null, "Recevez le fil en direct"));
     var lienApp = el("a", "lien-rose", "Installer l'app"); lienApp.href = "/#liste-attente"; b.appendChild(lienApp); zone.appendChild(b);
-    zone.appendChild(el("h1", null, (g.emoji || "🎉") + " " + g.name));
+    // Photo et description du groupe (9/11/2026, comme l'app)
+    if (g.photo_path) {
+      var tete = el("img", "photo-groupe"); tete.alt = "";
+      photo(g.photo_path).then(function (url) { if (url) tete.src = url; });
+      zone.appendChild(tete);
+      zone.appendChild(el("h1", null, g.name));
+    } else zone.appendChild(el("h1", null, (g.emoji || "🎉") + " " + g.name));
 
     var membres = (await sb.from("group_members").select("profile_id,status").eq("group_id", gid).eq("status", "active")).data || [];
     zone.appendChild(el("p", "sous", membres.length + (membres.length > 1 ? " membres · " : " membre · ") + dateLongue(d) + " · " + jMoins(d)));
+    if (g.description) zone.appendChild(el("p", "description-groupe", g.description));
     var noms = {}; var ids = membres.map(function (m) { return m.profile_id; });
     if (ids.length) ((await sb.from("profiles").select("id,first_name,last_name,avatar_path").in("id", ids)).data || []).forEach(function (p) { noms[p.id] = [p.first_name, p.last_name].filter(Boolean).join(" ") || "Un proche"; AVATARS[p.id] = p.avatar_path || null; });
 

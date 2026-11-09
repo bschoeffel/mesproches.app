@@ -104,3 +104,8 @@ main.app h1 { font-size: 36px; line-height: 1.1; }
 .av-auteur.vide { background: none; }
 .av-auteur img { width: 100%; height: 100%; object-fit: cover; }
 .bulle-ligne:not(.mien) .reactions, .bulle-ligne:not(.mien) .outils { margin-left: 34px; }
+
+/* Photo et description du groupe (9/11/2026, comme l'app) */
+.photo-groupe { display: block; width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin: 8px auto 4px; background: var(--carte); }
+.description-groupe { text-align: center; white-space: pre-wrap; margin: 4px 16px 12px; }
+.ico.ico-photo { object-fit: cover; border-radius: 50%; padding: 0; }
