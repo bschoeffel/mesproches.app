@@ -238,8 +238,16 @@
 
   var RAPIDES = ["❤️", "😂", "😮", "😢", "👍", "🎉"];
 
+  // Photos de la discussion : lues une fois (espace privé, réservé aux membres), puis gardées le temps de la page.
+  var PHOTOS = {};
+  function photo(chemin) {
+    if (!PHOTOS[chemin]) PHOTOS[chemin] = sb.storage.from("discussion").download(chemin)
+      .then(function (r) { return r.data ? URL.createObjectURL(r.data) : null; });
+    return PHOTOS[chemin];
+  }
+
   async function dessinerFil(filZone, uid, gid, noms) {
-    var r = await sb.from("messages").select("id,kind,body,sender_id,ref_id,created_at,deleted_at")
+    var r = await sb.from("messages").select("id,kind,body,sender_id,ref_id,created_at,deleted_at,photo_path")
       .eq("group_id", gid).order("created_at", { ascending: false }).limit(300);
     var fil = (r.data || []).reverse();
     var ids = fil.map(function (m) { return m.id; });
@@ -260,7 +268,16 @@
         var ligne = el("div", "bulle-ligne" + (mien ? " mien" : ""));
         var bulle = el("div", "bulle" + (mien ? " mien" : ""));
         if (!mien && noms[m.sender_id]) bulle.appendChild(el("strong", "auteur", noms[m.sender_id]));
-        bulle.appendChild(el("div", m.deleted_at ? "efface" : null, m.deleted_at ? "Message supprimé" : m.body));
+        if (m.photo_path && !m.deleted_at) {
+          // Photo envoyée depuis l'iPhone (9/11/2026) : un clic l'ouvre en grand
+          bulle.classList.add("avec-photo");
+          var img = el("img", "photo");
+          img.alt = "Photo" + (noms[m.sender_id] && !mien ? " de " + noms[m.sender_id] : "");
+          photo(m.photo_path).then(function (url) { if (url) { img.src = url; img.onclick = function () { window.open(url, "_blank"); }; } });
+          bulle.appendChild(img);
+        }
+        if (!m.photo_path || m.body || m.deleted_at)
+          bulle.appendChild(el("div", m.deleted_at ? "efface" : null, m.deleted_at ? "Message supprimé" : m.body));
         bulle.appendChild(el("small", null, heure(m)));
         ligne.appendChild(bulle);
         var mc = coeurs.filter(function (c) { return c.message_id === m.id; });
@@ -286,6 +303,7 @@
             suppr.onclick = async function () {
               if (!confirm("Supprimer ce message ?")) return;
               await sb.from("messages").update({ deleted_at: new Date().toISOString() }).eq("id", m.id);
+              if (m.photo_path) await sb.storage.from("discussion").remove([m.photo_path]);
               dessinerFil(filZone, uid, gid, noms);
             };
             outils.appendChild(suppr);

@@ -53,6 +53,9 @@ main.app h1 { font-size: 36px; line-height: 1.1; }
 .bulle .auteur { display: block; color: var(--rose); font-size: 13px; }
 .bulle small { display: block; text-align: right; color: var(--second); font-size: 11px; margin-top: 2px; }
 .bulle .efface { font-style: italic; color: var(--second); }
+.bulle.avec-photo { padding: 6px; }
+.bulle.avec-photo .auteur, .bulle.avec-photo small { padding: 0 6px; }
+.bulle .photo { display: block; width: 240px; max-width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 14px; background: var(--fond, #eee); cursor: zoom-in; }
 .outils { display: flex; gap: 10px; align-items: center; margin-top: 3px; }
 .coeur { border: 0; font: inherit; font-size: 12px; cursor: pointer; background: var(--carte); border-radius: 999px; padding: 2px 8px; opacity: .55; }
 .coeur.mis { opacity: 1; }
