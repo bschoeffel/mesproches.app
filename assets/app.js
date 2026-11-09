@@ -197,9 +197,12 @@
     if (ids.length) ((await sb.from("profiles").select("id,first_name,last_name,avatar_path").in("id", ids)).data || []).forEach(function (p) { noms[p.id] = [p.first_name, p.last_name].filter(Boolean).join(" ") || "Un proche"; AVATARS[p.id] = p.avatar_path || null; });
 
     // Groupe allégé (9/11/2026, comme l'app) : cadeau, organisation et Secret Santa passent par le « + »
-    var taches = (await sb.from("group_tasks").select("kind,assignee_id").eq("group_id", gid)).data || [];
+    var todos = (await sb.from("group_todos").select("id,title,created_by,assignee_id,done,created_at").eq("group_id", gid).order("created_at")).data || [];
     var tirage = g.event.kind === "christmas"
       ? (await sb.from("santa_draws").select("id,budget_cents,exchange_date,status").eq("group_id", gid).maybeSingle()).data : null;
+
+    // La todo (9/11/2026, comme l'app) : « Je le prends »
+    zone.appendChild(todoListe(zone, uid, gid, todos, noms, admin, g.event.kind));
 
     // Envies publiées dans le groupe
     var publiees = ((await sb.from("group_wishes").select("wish_id").eq("group_id", gid)).data || []).map(function (x) { return x.wish_id; });
@@ -226,16 +229,7 @@
     }
     if (tirage && tirage.status === "drawn") entree("🎅 Découvrir ma personne", true, function () { santa(zone, uid, gid, tirage, g.name); });
     else if (tirage) entree("🎅 Secret Santa · le tirage n'est pas encore fait", false, function () {});
-    [["gift", "du cadeau", "🎁"], ["organisation", "de l'organisation", "🗓️"]].forEach(function (k) {
-      var t = taches.filter(function (x) { return x.kind === k[0]; })[0];
-      var mienne = t && t.assignee_id === uid, prise = t && t.assignee_id && !mienne;
-      entree(k[2] + (mienne ? " Je ne m'occupe plus " : " Je m'occupe ") + k[1], !prise, async function () {
-        await sb.from("group_tasks").update({ assignee_id: mienne ? null : uid, status: mienne ? "open" : "taken" }).eq("group_id", gid).eq("kind", k[0]);
-        var prenom = (await monProfil(uid)).first_name || "Quelqu'un";
-        await ecrire({ group_id: gid, sender_id: uid, kind: "action", body: prenom + (mienne ? " ne s'occupe plus " : " s'occupe ") + k[1] });
-        groupe(zone, uid, gid);
-      });
-    });
+    entree("✅ Ajouter à la todo", true, function () { var c = document.querySelector(".todo-ajout input"); if (c) { c.focus(); c.scrollIntoView({ block: "center" }); } });
     plus.onclick = function () { menu.classList.toggle("cache"); };
     saisie.appendChild(menu); saisie.appendChild(plus);
     saisie.appendChild(champ); saisie.appendChild(envoyer);
@@ -337,10 +331,81 @@
     zone.appendChild(el("p", "note centre", "Seuls les administrateurs voient ce lien."));
   }
 
+  // La todo du groupe (9/11/2026, comme l'app) : libres d'abord, puis prises, puis faites.
+  function todoListe(zone, uid, gid, todos, noms, admin, occasion) {
+    var rang = function (t) { return t.done ? 2 : (t.assignee_id ? 1 : 0); };
+    todos = todos.map(function (t, i) { t.i = i; return t; }).sort(function (a, b) { return rang(a) - rang(b) || a.i - b.i; });
+    var prises = todos.filter(function (t) { return t.assignee_id || t.done; }).length, faites = todos.filter(function (t) { return t.done; }).length;
+    var boite = el("div", "carte todo");
+    var tete = el("div", "todo-tete"); tete.appendChild(el("strong", null, "Todo"));
+    tete.appendChild(el("span", null, todos.length ? prises + " sur " + todos.length + " pris" + (faites ? " · " + faites + " fait" + (faites > 1 ? "s" : "") : "") : "Rien pour l'instant"));
+    boite.appendChild(tete);
+    var recharger = function () { groupe(zone, uid, gid); };
+    var prenom = async function () { return (await monProfil(uid)).first_name || "Quelqu'un"; };
+    todos.forEach(function (t) {
+      var l = el("div", "todo-ligne" + (t.done ? " faite" : ""));
+      var peutCocher = t.assignee_id === uid || admin;
+      var ck = el("button", "todo-coche" + (t.done ? " ok" : ""), t.done ? "✓" : ""); ck.type = "button"; ck.disabled = !peutCocher;
+      ck.title = t.done ? "Faite" : "Pas encore faite";
+      ck.onclick = async function () { await sb.rpc("todo_done", { p_id: t.id, p_done: !t.done }); recharger(); };
+      l.appendChild(ck);
+      var x = el("div", "todo-texte"); x.appendChild(el("span", null, t.title));
+      if (t.assignee_id) x.appendChild(el("small", t.assignee_id === uid && !t.done ? "moi" : null, (t.assignee_id === uid ? "Vous" : (noms[t.assignee_id] || "Un proche")) + (t.done ? " · fait" : "")));
+      l.appendChild(x);
+      if (!t.assignee_id && !t.done) {
+        var p = el("button", "pastille", "Je le prends"); p.type = "button";
+        p.onclick = async function () {
+          var r = await sb.rpc("todo_take", { p_id: t.id, p_take: true });
+          if (r.data) await ecrire({ group_id: gid, sender_id: uid, kind: "action", body: (await prenom()) + " prend « " + t.title + " »" });
+          recharger();
+        };
+        l.appendChild(p);
+      } else if (t.assignee_id === uid && !t.done) {
+        var q = el("button", "pastille claire", "Je ne le prends plus"); q.type = "button";
+        q.onclick = async function () {
+          var r = await sb.rpc("todo_take", { p_id: t.id, p_take: false });
+          if (r.data) await ecrire({ group_id: gid, sender_id: uid, kind: "action", body: (await prenom()) + " ne prend plus « " + t.title + " »" }, true);
+          recharger();
+        };
+        l.appendChild(q);
+      }
+      if (t.created_by === uid || admin) {
+        var s = el("button", "todo-suppr", "✕"); s.type = "button"; s.title = "Supprimer";
+        s.onclick = async function () { await sb.from("group_todos").delete().eq("id", t.id); recharger(); };
+        l.appendChild(s);
+      }
+      boite.appendChild(l);
+    });
+    // Todo vide : trois idées à toucher, selon l'occasion
+    if (!todos.length) {
+      var idees = el("div", "todo-idees");
+      (occasion === "christmas" ? ["Le repas", "La déco", "Les courses"] : occasion === "birthday" ? ["Le cadeau", "Le gâteau", "Le lieu"] : ["Le cadeau", "Le lieu", "Les courses"]).forEach(function (idee) {
+        var b = el("button", "pastille claire", "＋ " + idee); b.type = "button";
+        b.onclick = async function () { await sb.from("group_todos").insert({ group_id: gid, title: idee, created_by: uid }); recharger(); };
+        idees.appendChild(b);
+      });
+      boite.appendChild(idees);
+    }
+    var f = el("form", "todo-ajout");
+    var c = el("input"); c.placeholder = "＋ Ajouter une tâche"; c.maxLength = 120;
+    var moi = el("label", null); var cb = el("input"); cb.type = "checkbox"; moi.appendChild(cb); moi.appendChild(document.createTextNode(" Je le prends"));
+    var ok = el("button", "pastille", "Ajouter"); ok.type = "submit";
+    f.appendChild(c); f.appendChild(moi); f.appendChild(ok);
+    f.onsubmit = async function (e) {
+      e.preventDefault();
+      var titre = c.value.trim().slice(0, 120); if (!titre) return;
+      var r = await sb.from("group_todos").insert({ group_id: gid, title: titre, created_by: uid, assignee_id: cb.checked ? uid : null });
+      if (!r.error && cb.checked) await ecrire({ group_id: gid, sender_id: uid, kind: "action", body: (await prenom()) + " prend « " + titre + " »" });
+      recharger();
+    };
+    boite.appendChild(f);
+    return boite;
+  }
+
   function prevenir(corps) { sb.functions.invoke("notifier", { body: corps }).catch(function () {}); }
-  async function ecrire(ligne) {
+  async function ecrire(ligne, silencieux) {
     var r = await sb.from("messages").insert(ligne).select("id").single();
-    if (r.data) prevenir({ event: "message", group_id: ligne.group_id, message_id: r.data.id });
+    if (r.data && !silencieux) prevenir({ event: "message", group_id: ligne.group_id, message_id: r.data.id });
     return r;
   }
 

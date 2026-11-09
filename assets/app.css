@@ -118,3 +118,23 @@ main.app h1 { font-size: 36px; line-height: 1.1; }
 .champ textarea { width: 100%; border: 0; background: transparent; font: inherit; font-size: 17px; color: var(--texte); outline: none; padding: 2px 0; resize: vertical; }
 .bouton-sombre { background: var(--nuit); color: #fff; border-radius: 30px; padding: 14px; margin-top: 6px; }
 @media (prefers-color-scheme: dark) { .bouton-sombre { background: #fff; color: #0D0C22; } }
+
+/* Todo du groupe (9/11/2026, comme l'app) */
+.todo { padding: 4px 0; margin: 10px 0 14px; }
+.todo-tete { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; }
+.todo-tete span { color: var(--second); font-size: 14px; }
+.todo-ligne { display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-top: .5px solid var(--sep); }
+.todo-coche { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--second); background: none; color: #fff; font-weight: 700; cursor: pointer; flex: none; padding: 0; }
+.todo-coche.ok { background: var(--vert); border-color: var(--vert); }
+.todo-coche[disabled] { cursor: default; opacity: .6; }
+.todo-texte { flex: 1; min-width: 0; }
+.todo-texte small { display: block; color: var(--second); font-size: 12px; }
+.todo-texte small.moi { color: var(--rose); }
+.todo-ligne.faite .todo-texte span { text-decoration: line-through; color: var(--second); }
+.pastille { border: 0; border-radius: 16px; background: var(--rose); color: #fff; font: inherit; font-size: 14px; font-weight: 600; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+.pastille.claire { background: var(--poudre); color: var(--rose); }
+.todo-suppr { border: 0; background: none; color: var(--second); cursor: pointer; font-size: 14px; }
+.todo-ajout { display: flex; gap: 8px; align-items: center; padding: 9px 16px; border-top: .5px solid var(--sep); flex-wrap: wrap; }
+.todo-ajout input:not([type]) { flex: 1; min-width: 140px; border: 0; background: transparent; font: inherit; color: var(--texte); outline: none; }
+.todo-ajout label { font-size: 14px; color: var(--second); white-space: nowrap; }
+.todo-idees { display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 16px; border-top: .5px solid var(--sep); }
