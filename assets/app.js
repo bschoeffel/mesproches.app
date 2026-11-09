@@ -48,7 +48,7 @@
     var g = apercu[0];
 
     // Déjà membre : droit au groupe ; demande envoyée : l'attente
-    if (g.my_status === "active") { memoriser(g.group_id); location.href = "/groupes/#g=" + g.group_id; return; }
+    if (g.my_status === "active") { memoriser(g.group_id); location.href = "/evenements/#g=" + g.group_id; return; }
     if (g.my_status === "pending") return attente(zone, g.group_name);
     if (g.my_status === "removed") return pasOuvert(zone);
     vide(zone);
@@ -58,7 +58,7 @@
     var icone = Object.assign(el("img", "icone"), { src: "/assets/icone.png", alt: "" });
     c.appendChild(icone);
     c.appendChild(el("h1", null, (g.inviter ? g.inviter + " vous invite" : "On vous invite") + " à préparer « " + g.group_name + " »"));
-    var accueil = el("p", "sous", "Un groupe sans la personne fêtée, pour organiser la surprise ensemble : idées, cadeau, qui s'occupe de quoi.");
+    var accueil = el("p", "sous", "Un événement sans la personne fêtée, pour organiser la surprise ensemble : idées, cadeau, qui s'occupe de quoi.");
     c.appendChild(accueil);
     sb.functions.invoke("apercu-invitation", { body: { token: token } }).then(function (r) {
       var d = r && r.data; if (!d) return;
@@ -75,12 +75,12 @@
       var b = el("div", "champ"); b.appendChild(el("label", null, f[0]));
       var i = el("input"); i.value = f[2] || ""; i.autocomplete = f[1] === "first_name" ? "given-name" : "family-name"; b.appendChild(i); form.appendChild(b); return i;
     });
-    form.appendChild(el("p", "note", "Les membres du groupe verront votre prénom et votre nom. Pas de mot de passe, pas de numéro de téléphone."));
-    var bouton = el("button", "bouton", "Rejoindre le groupe");
+    form.appendChild(el("p", "note", "Les membres de l'événement verront votre prénom et votre nom. Pas de mot de passe, pas de numéro de téléphone."));
+    var bouton = el("button", "bouton", "Rejoindre l'événement");
     bouton.style.marginTop = "18px";
     var err = el("p", "erreur cache");
     form.appendChild(bouton); form.appendChild(err);
-    form.appendChild(el("p", "note centre", "Gardez cette page : elle vous ramène au groupe, dans ce navigateur."));
+    form.appendChild(el("p", "note centre", "Gardez cette page : elle vous ramène à l'événement, dans ce navigateur."));
     zone.appendChild(form);
 
     bouton.onclick = async function () {
@@ -90,10 +90,10 @@
       await sb.from("profiles").update({ first_name: prenom.slice(0, 60), last_name: nom.slice(0, 60) }).eq("id", uid);
       var r = await sb.rpc("join_by_link", { p_token: token });
       if (r.error) {
-        err.textContent = /pas ouvert/.test(r.error.message) ? "Ce groupe ne vous est pas ouvert." : "Le lien n'est plus valable : demandez-en un nouveau.";
-        err.classList.remove("cache"); bouton.disabled = false; bouton.textContent = "Rejoindre le groupe"; return;
+        err.textContent = /pas ouvert/.test(r.error.message) ? "Cet événement ne vous est pas ouvert." : "Le lien n'est plus valable : demandez-en un nouveau.";
+        err.classList.remove("cache"); bouton.disabled = false; bouton.textContent = "Rejoindre l'événement"; return;
       }
-      if (r.data === "active") { memoriser(g.group_id); location.href = "/groupes/#g=" + g.group_id; return; }
+      if (r.data === "active") { memoriser(g.group_id); location.href = "/evenements/#g=" + g.group_id; return; }
       prevenir({ event: "join_request", group_id: g.group_id });
       attente(zone, g.group_name);
     };
@@ -104,7 +104,7 @@
     var c = el("div", "centre");
     c.appendChild(el("div", "visages")).appendChild(el("div", "ico", "⏳"));
     c.appendChild(el("h1", null, "Demande envoyée"));
-    c.appendChild(el("p", "sous", "L'organisateur de « " + nom + " » doit valider votre arrivée. Revenez sur cette page : elle s'ouvrira sur le groupe dès que c'est fait."));
+    c.appendChild(el("p", "sous", "L'organisateur de « " + nom + " » doit valider votre arrivée. Revenez sur cette page : elle s'ouvrira sur l'événement dès que c'est fait."));
     var b = el("button", "bouton", "Vérifier maintenant"); b.onclick = function () { location.reload(); };
     c.appendChild(b);
     c.appendChild(el("p", "note", "Sur iPhone, l'app Mes Proches vous préviendra (bêta sur invitation)."));
@@ -113,14 +113,14 @@
 
   function pasOuvert(zone) {
     vide(zone);
-    zone.appendChild(el("h1", "centre", "Ce groupe ne vous est pas ouvert"));
+    zone.appendChild(el("h1", "centre", "Cet événement ne vous est pas ouvert"));
   }
 
   function pasValable(zone) {
     vide(zone);
     var c = el("div", "centre");
     c.appendChild(el("h1", null, "Ce lien n'est plus valable"));
-    c.appendChild(el("p", "sous", "Demandez un nouveau lien à l'organisateur du groupe."));
+    c.appendChild(el("p", "sous", "Demandez un nouveau lien à l'organisateur de l'événement."));
     zone.appendChild(c);
   }
 
@@ -149,7 +149,7 @@
       nv.forEach(function (m) { if (m.created_at > lus[m.group_id]) nonLus[m.group_id] = (nonLus[m.group_id] || 0) + 1; });
     }
     vide(zone);
-    zone.appendChild(el("h1", null, "Mes groupes"));
+    zone.appendChild(el("h1", null, "Mes événements"));
     var liste = el("div", "liste");
     actifs.forEach(function (g) {
       var a = el("a", "ligne"); a.href = "#g=" + g.id; a.style.color = "inherit"; a.style.textDecoration = "none";
@@ -161,7 +161,7 @@
       if (n) a.appendChild(el("span", "nouveaux", n > 1 ? n + " nouveaux" : "1 nouveau"));
       liste.appendChild(a);
     });
-    if (!liste.firstChild) zone.appendChild(el("p", "sous", "Aucun groupe dans ce navigateur. Ouvrez le lien d'invitation reçu par message."));
+    if (!liste.firstChild) zone.appendChild(el("p", "sous", "Aucun événement dans ce navigateur. Ouvrez le lien d'invitation reçu par message."));
     else zone.appendChild(liste);
   }
 
@@ -172,7 +172,7 @@
     memoriser(gid); marquerLu(gid);
     var g = (await sb.from("groups").select("id,name,emoji,photo_path,description,event:events(kind,title,event_date)").eq("id", gid).maybeSingle()).data;
     vide(zone);
-    if (!g) { zone.appendChild(el("p", "sous", "Ce groupe ne vous est pas (ou plus) ouvert.")); return; }
+    if (!g) { zone.appendChild(el("p", "sous", "Cet événement ne vous est pas (ou plus) ouvert.")); return; }
     var d = jour(g.event.event_date);
     var b = el("div", "bandeau"); b.appendChild(el("span", null, "Recevez le fil en direct"));
     var lienApp = el("a", "lien-rose", "Installer l'app"); lienApp.href = "/#liste-attente"; b.appendChild(lienApp); zone.appendChild(b);
@@ -189,7 +189,7 @@
     zone.appendChild(el("p", "sous", membres.length + (membres.length > 1 ? " membres · " : " membre · ") + dateLongue(d) + " · " + jMoins(d)));
     if (g.description) zone.appendChild(el("p", "description-groupe", g.description));
     if (admin) {
-      var mod = el("a", "lien-modifier", "✎ Modifier le groupe"); mod.href = "#";
+      var mod = el("a", "lien-modifier", "✎ Modifier l'événement"); mod.href = "#";
       mod.onclick = function (e) { e.preventDefault(); modifierGroupe(zone, uid, gid, g); };
       zone.appendChild(mod);
     }
@@ -258,7 +258,7 @@
       if (!document.body.contains(filZone)) { clearInterval(window.__filMinuteur); if (window.__filCanal) sb.removeChannel(window.__filCanal); return; }
       if (!document.hidden) dessinerFil(filZone, uid, gid, noms);
     }, 60000);
-    var retour = el("a", "lien-rose", "‹ Mes groupes"); retour.href = "#"; retour.onclick = function () { setTimeout(groupes, 0); };
+    var retour = el("a", "lien-rose", "‹ Mes événements"); retour.href = "#"; retour.onclick = function () { setTimeout(groupes, 0); };
     zone.appendChild(el("p")).appendChild(retour);
   }
 
@@ -284,7 +284,7 @@
     var retour = el("a", "lien-rose", "‹ " + g.name); retour.href = "#g=" + gid;
     retour.onclick = function (e) { e.preventDefault(); groupe(zone, uid, gid); };
     zone.appendChild(retour);
-    zone.appendChild(el("h1", null, "Modifier le groupe"));
+    zone.appendChild(el("h1", null, "Modifier l'événement"));
     var bloc = el("div", "centre");
     var apercu = g.photo_path ? el("img", "photo-groupe") : el("div", "photo-groupe vide", g.emoji || "🎉");
     if (g.photo_path) photo(g.photo_path).then(function (u) { if (u) apercu.src = u; });
@@ -308,13 +308,13 @@
       var i = long ? el("textarea") : el("input"); i.value = valeur || ""; i.maxLength = max; if (long) i.rows = 3;
       c.appendChild(i); zone.appendChild(c); return i;
     }
-    var nom = champ("Nom du groupe", g.name, false, 80);
+    var nom = champ("Nom de l'événement", g.name, false, 80);
     var desc = champ("Description · visible de tous les membres", g.description, true, 500);
     var b = el("button", "bouton bouton-sombre", "Enregistrer");
     var erreur = el("p", "note");
     b.onclick = async function () {
       var titre = nom.value.trim();
-      if (!titre) { erreur.textContent = "Le groupe a besoin d'un nom."; return; }
+      if (!titre) { erreur.textContent = "L'événement a besoin d'un nom."; return; }
       b.disabled = true; erreur.textContent = "";
       var maj = { name: titre.slice(0, 80), description: desc.value.trim().slice(0, 500) || null };
       if (nouvelle) {
@@ -324,7 +324,7 @@
         maj.photo_path = chemin;
       } else if (retirer) maj.photo_path = null;
       var r = await sb.from("groups").update(maj).eq("id", gid).select("id");
-      if (r.error || !r.data || !r.data.length) { b.disabled = false; erreur.textContent = "Seuls les administrateurs peuvent modifier le groupe."; return; }
+      if (r.error || !r.data || !r.data.length) { b.disabled = false; erreur.textContent = "Seuls les administrateurs peuvent modifier l'événement."; return; }
       groupe(zone, uid, gid);
     };
     zone.appendChild(b); zone.appendChild(erreur);
@@ -638,9 +638,9 @@
           zone.appendChild(listeEnvies(envies, resas, uid, function () { santa(zone, uid, gid, tirage, nomGroupe); }));
         }
       }
-      zone.appendChild(el("p", "note", "🤫 Gardez le secret : dans le groupe, personne ne voit votre tirage."));
+      zone.appendChild(el("p", "note", "🤫 Gardez le secret : dans l'événement, personne ne voit votre tirage."));
     }
-    var retour = el("a", "lien-rose", "‹ Retour au groupe"); retour.href = "#g=" + gid; retour.onclick = function () { setTimeout(groupes, 0); };
+    var retour = el("a", "lien-rose", "‹ Retour à l'événement"); retour.href = "#g=" + gid; retour.onclick = function () { setTimeout(groupes, 0); };
     zone.appendChild(el("p")).appendChild(retour);
   }
 
