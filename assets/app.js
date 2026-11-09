@@ -199,21 +199,111 @@
       zone.appendChild(listeEnvies(envies, resas, uid, function () { groupe(zone, uid, gid); }, gid));
     }
 
-    // Le fil
-    var fil = (await sb.from("messages").select("kind,body,created_at").eq("group_id", gid).order("created_at").limit(200)).data || [];
+    // La discussion
     zone.appendChild(el("p", "titre-section", "Le fil"));
-    var lf = el("div", "liste");
-    fil.forEach(function (m) {
-      var l = el("div", "ligne");
-      l.appendChild(el("div", "ico", m.kind === "wish" ? "💝" : /cadeau/.test(m.body) ? "🎁" : /organisation/.test(m.body) ? "🗓️" : "✨"));
-      var t = el("div", "grand"); t.appendChild(el("strong", null, m.body));
-      t.appendChild(el("small", null, new Date(m.created_at).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })));
-      l.appendChild(t); lf.appendChild(l);
-    });
-    if (fil.length) zone.appendChild(lf);
-    zone.appendChild(el("p", "note", "La discussion arrive bientôt. Touchez « Cadeau » ou « Organisé » pour dire que vous vous en occupez."));
+    var filZone = el("div", "fil"); zone.appendChild(filZone);
+    await dessinerFil(filZone, uid, gid, noms);
+    var saisie = el("form", "saisie");
+    var champ = el("textarea"); champ.rows = 1; champ.placeholder = "Message"; champ.maxLength = 4000;
+    var envoyer = el("button", "bouton", "Envoyer"); envoyer.type = "submit";
+    saisie.appendChild(champ); saisie.appendChild(envoyer);
+    champ.onkeydown = function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saisie.requestSubmit(); } };
+    saisie.onsubmit = async function (e) {
+      e.preventDefault();
+      var texte = champ.value.trim(); if (!texte) return;
+      champ.value = "";
+      await sb.from("messages").insert({ group_id: gid, sender_id: uid, kind: "text", body: texte });
+      dessinerFil(filZone, uid, gid, noms);
+    };
+    zone.appendChild(saisie);
+    // Le fil se relit toutes les 5 secondes tant que la page est ouverte
+    clearInterval(window.__filMinuteur);
+    window.__filMinuteur = setInterval(function () {
+      if (!document.body.contains(filZone)) return clearInterval(window.__filMinuteur);
+      if (!document.hidden) dessinerFil(filZone, uid, gid, noms);
+    }, 5000);
     var retour = el("a", "lien-rose", "‹ Mes groupes"); retour.href = "#"; retour.onclick = function () { setTimeout(groupes, 0); };
     zone.appendChild(el("p")).appendChild(retour);
+  }
+
+  async function dessinerFil(filZone, uid, gid, noms) {
+    var r = await sb.from("messages").select("id,kind,body,sender_id,ref_id,created_at,deleted_at")
+      .eq("group_id", gid).order("created_at", { ascending: false }).limit(300);
+    var fil = (r.data || []).reverse();
+    var ids = fil.map(function (m) { return m.id; });
+    var coeurs = ids.length ? ((await sb.from("reactions").select("message_id,profile_id").in("message_id", ids)).data || []) : [];
+    var pids = fil.filter(function (m) { return m.kind === "poll" && m.ref_id; }).map(function (m) { return m.ref_id; });
+    var sondages = {}, options = [], votes = [];
+    if (pids.length) {
+      ((await sb.from("polls").select("id,question").in("id", pids)).data || []).forEach(function (p) { sondages[p.id] = p; });
+      options = (await sb.from("poll_options").select("id,poll_id,label,position").in("poll_id", pids)).data || [];
+      votes = (await sb.from("poll_votes").select("poll_id,option_id,profile_id").in("poll_id", pids)).data || [];
+    }
+    var bas = filZone.scrollHeight - filZone.scrollTop - filZone.clientHeight < 40;
+    vide(filZone);
+    function heure(m) { return new Date(m.created_at).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); }
+    fil.forEach(function (m) {
+      var mien = m.sender_id === uid;
+      if (m.kind === "text") {
+        var ligne = el("div", "bulle-ligne" + (mien ? " mien" : ""));
+        var bulle = el("div", "bulle" + (mien ? " mien" : ""));
+        if (!mien && noms[m.sender_id]) bulle.appendChild(el("strong", "auteur", noms[m.sender_id]));
+        bulle.appendChild(el("div", m.deleted_at ? "efface" : null, m.deleted_at ? "Message supprimé" : m.body));
+        bulle.appendChild(el("small", null, heure(m)));
+        ligne.appendChild(bulle);
+        var mc = coeurs.filter(function (c) { return c.message_id === m.id; });
+        var aime = mc.some(function (c) { return c.profile_id === uid; });
+        if (!m.deleted_at) {
+          var outils = el("div", "outils");
+          var coeur = el("button", "coeur" + (aime ? " on" : ""), "❤️" + (mc.length ? " " + mc.length : ""));
+          coeur.title = aime ? "Retirer" : "J'aime";
+          coeur.onclick = async function () {
+            if (aime) await sb.from("reactions").delete().eq("message_id", m.id).eq("profile_id", uid).eq("emoji", "❤️");
+            else await sb.from("reactions").insert({ message_id: m.id, profile_id: uid, emoji: "❤️" });
+            dessinerFil(filZone, uid, gid, noms);
+          };
+          outils.appendChild(coeur);
+          if (mien) {
+            var suppr = el("button", "lien-gris", "Supprimer");
+            suppr.onclick = async function () {
+              if (!confirm("Supprimer ce message ?")) return;
+              await sb.from("messages").update({ deleted_at: new Date().toISOString() }).eq("id", m.id);
+              dessinerFil(filZone, uid, gid, noms);
+            };
+            outils.appendChild(suppr);
+          }
+          ligne.appendChild(outils);
+        }
+        filZone.appendChild(ligne);
+      } else if (m.kind === "poll" && sondages[m.ref_id]) {
+        var p = sondages[m.ref_id];
+        var carte = el("div", "carte-sondage");
+        carte.appendChild(el("strong", null, "📊 " + p.question + (noms[m.sender_id] && !mien ? " · " + noms[m.sender_id] : "")));
+        var vs = votes.filter(function (v) { return v.poll_id === p.id; });
+        var monVote = (vs.filter(function (v) { return v.profile_id === uid; })[0] || {}).option_id;
+        options.filter(function (o) { return o.poll_id === p.id; }).sort(function (a, b) { return a.position - b.position; }).forEach(function (o) {
+          var n = vs.filter(function (v) { return v.option_id === o.id; }).length;
+          var b = el("button", "option" + (monVote === o.id ? " on" : ""));
+          b.appendChild(el("span", null, (monVote === o.id ? "◉ " : "○ ") + o.label));
+          var barre = el("span", "barre"); var plein = el("span"); plein.style.width = (vs.length ? Math.round(100 * n / vs.length) : 0) + "%";
+          barre.appendChild(plein); b.appendChild(barre); b.appendChild(el("small", null, String(n)));
+          b.onclick = async function () {
+            await sb.from("poll_votes").upsert({ poll_id: p.id, option_id: o.id, profile_id: uid }, { onConflict: "poll_id,profile_id" });
+            dessinerFil(filZone, uid, gid, noms);
+          };
+          carte.appendChild(b);
+        });
+        filZone.appendChild(carte);
+      } else {
+        var l = el("div", "ligne");
+        l.appendChild(el("div", "ico", m.kind === "wish" ? "💝" : /cadeau/.test(m.body) ? "🎁" : /organisation/.test(m.body) ? "🗓️" : /Santa/.test(m.body) ? "🎅" : "✨"));
+        var t = el("div", "grand"); t.appendChild(el("strong", null, m.body || ""));
+        t.appendChild(el("small", null, heure(m)));
+        l.appendChild(t); filZone.appendChild(l);
+      }
+    });
+    if (!fil.length) filZone.appendChild(el("p", "note", "Pas encore de message. Lancez la discussion !"));
+    if (bas) filZone.scrollTop = filZone.scrollHeight;
   }
 
   function listeEnvies(envies, resas, uid, recharger, gid) {
