@@ -75,7 +75,12 @@
       var b = el("div", "champ"); b.appendChild(el("label", null, f[0]));
       var i = el("input"); i.value = f[2] || ""; i.autocomplete = f[1] === "first_name" ? "given-name" : "family-name"; b.appendChild(i); form.appendChild(b); return i;
     });
-    form.appendChild(el("p", "note", "Les membres de l'événement verront votre prénom et votre nom. Pas de mot de passe, pas de numéro de téléphone."));
+    // Numéro facultatif (10/11/2026, maquette rejoindre-numero validée) : seule son empreinte sert, pour être reconnu
+    var bTel = el("div", "champ"); bTel.appendChild(el("label", null, "Numéro de portable (facultatif)"));
+    var tel = el("input"); tel.type = "tel"; tel.autocomplete = "tel"; tel.inputMode = "tel"; tel.placeholder = "06 12 34 56 78";
+    bTel.appendChild(tel); form.appendChild(bTel);
+    form.appendChild(el("p", "note", "Ceux qui vous invitent vous reconnaîtront tout de suite dans leurs contacts."));
+    form.appendChild(el("p", "note", "Les membres verront votre prénom et votre nom. Votre numéro n'est jamais montré : il sert seulement à vous reconnaître. Pas de mot de passe."));
     var bouton = el("button", "bouton", "Rejoindre l'événement");
     bouton.style.marginTop = "18px";
     var err = el("p", "erreur cache");
@@ -88,6 +93,9 @@
       if (!prenom) { err.textContent = "Indiquez au moins votre prénom."; err.classList.remove("cache"); return; }
       bouton.disabled = true; bouton.textContent = "…";
       await sb.from("profiles").update({ first_name: prenom.slice(0, 60), last_name: nom.slice(0, 60) }).eq("id", uid);
+      var numero = e164(tel.value);
+      if (tel.value.trim() && !numero) { err.textContent = "Ce numéro ne semble pas valable : vérifiez-le, ou laissez le champ vide."; err.classList.remove("cache"); bouton.disabled = false; bouton.textContent = "Rejoindre l'événement"; return; }
+      if (numero) await sb.from("profile_private").update({ phone_e164: numero }).eq("profile_id", uid);
       var r = await sb.rpc("join_by_link", { p_token: token });
       if (r.error) {
         err.textContent = /pas ouvert/.test(r.error.message) ? "Cet événement ne vous est pas ouvert." : "Le lien n'est plus valable : demandez-en un nouveau.";
@@ -97,6 +105,14 @@
       prevenir({ event: "join_request", group_id: g.group_id });
       attente(zone, g.group_name);
     };
+  }
+
+  // « 06 12 34 56 78 », « +33 6… », « 0033 6… » → « +33612345678 » (comme l'app)
+  function e164(brut) {
+    var d = (brut || "").replace(/[^0-9+]/g, "");
+    if (d.indexOf("00") === 0) d = "+" + d.slice(2);
+    if (d.charAt(0) === "0" && d.length === 10) d = "+33" + d.slice(1);
+    return /^\+[1-9][0-9]{6,14}$/.test(d) ? d : null;
   }
 
   function attente(zone, nom) {
