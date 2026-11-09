@@ -247,6 +247,20 @@
 
   var RAPIDES = ["❤️", "😂", "😮", "😢", "👍", "🎉"];
 
+  // Les liens du texte deviennent cliquables, sans jamais interpréter le texte comme du HTML.
+  function avecLiens(texte) {
+    var bloc = el("div");
+    var morceaux = (texte || "").split(/(https?:\/\/[^\s<>"]+)/g);
+    morceaux.forEach(function (m, i) {
+      if (i % 2 === 1) {
+        var a = el("a", "lien", m);
+        a.href = m; a.target = "_blank"; a.rel = "noopener noreferrer";
+        bloc.appendChild(a);
+      } else if (m) bloc.appendChild(document.createTextNode(m));
+    });
+    return bloc;
+  }
+
   // Photos de la discussion : lues une fois (espace privé, réservé aux membres), puis gardées le temps de la page.
   var PHOTOS = {};
   function photo(chemin) {
@@ -256,7 +270,7 @@
   }
 
   async function dessinerFil(filZone, uid, gid, noms) {
-    var r = await sb.from("messages").select("id,kind,body,sender_id,ref_id,created_at,deleted_at,photo_path")
+    var r = await sb.from("messages").select("id,kind,body,sender_id,ref_id,created_at,deleted_at,photo_path,link_url,link_title,link_description,link_site,link_image_path")
       .eq("group_id", gid).order("created_at", { ascending: false }).limit(300);
     var fil = (r.data || []).reverse();
     var ids = fil.map(function (m) { return m.id; });
@@ -285,8 +299,25 @@
           photo(m.photo_path).then(function (url) { if (url) { img.src = url; img.onclick = function () { window.open(url, "_blank"); }; } });
           bulle.appendChild(img);
         }
+        // Aperçu du lien, lu par l'expéditeur (9/11/2026)
+        if (m.link_url && !m.deleted_at && /^https?:\/\//i.test(m.link_url)) {
+          var carte = el("a", "apercu");
+          carte.href = m.link_url; carte.target = "_blank"; carte.rel = "noopener noreferrer";
+          if (m.link_image_path) {
+            var vignette = el("img");
+            vignette.alt = "";
+            photo(m.link_image_path).then(function (url) { if (url) vignette.src = url; });
+            carte.appendChild(vignette);
+          }
+          var infos = el("div");
+          if (m.link_title) infos.appendChild(el("strong", null, m.link_title));
+          if (m.link_description) infos.appendChild(el("span", null, m.link_description));
+          infos.appendChild(el("small", null, m.link_site || ""));
+          carte.appendChild(infos);
+          bulle.appendChild(carte);
+        }
         if (!m.photo_path || m.body || m.deleted_at)
-          bulle.appendChild(el("div", m.deleted_at ? "efface" : null, m.deleted_at ? "Message supprimé" : m.body));
+          bulle.appendChild(m.deleted_at ? el("div", "efface", "Message supprimé") : avecLiens(m.body));
         bulle.appendChild(el("small", null, heure(m)));
         ligne.appendChild(bulle);
         var mc = coeurs.filter(function (c) { return c.message_id === m.id; });
