@@ -216,12 +216,22 @@
       dessinerFil(filZone, uid, gid, noms);
     };
     zone.appendChild(saisie);
-    // Le fil se relit toutes les 5 secondes tant que la page est ouverte
+    // Temps réel (9/11/2026) : le fil se relit dès qu'il se passe quelque chose dans le groupe
+    if (window.__filCanal) sb.removeChannel(window.__filCanal);
+    var relire = function () { if (document.body.contains(filZone)) dessinerFil(filZone, uid, gid, noms); };
+    var mien = "group_id=eq." + gid;
+    window.__filCanal = sb.channel("groupe-" + gid)
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: mien }, relire)
+      .on("postgres_changes", { event: "*", schema: "public", table: "group_tasks", filter: mien }, relire)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reactions" }, relire)
+      .on("postgres_changes", { event: "*", schema: "public", table: "poll_votes" }, relire)
+      .subscribe();
+    // Filet de sécurité : une relecture par minute
     clearInterval(window.__filMinuteur);
     window.__filMinuteur = setInterval(function () {
-      if (!document.body.contains(filZone)) return clearInterval(window.__filMinuteur);
+      if (!document.body.contains(filZone)) { clearInterval(window.__filMinuteur); if (window.__filCanal) sb.removeChannel(window.__filCanal); return; }
       if (!document.hidden) dessinerFil(filZone, uid, gid, noms);
-    }, 5000);
+    }, 60000);
     var retour = el("a", "lien-rose", "‹ Mes groupes"); retour.href = "#"; retour.onclick = function () { setTimeout(groupes, 0); };
     zone.appendChild(el("p")).appendChild(retour);
   }
