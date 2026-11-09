@@ -128,22 +128,38 @@
     var gid = parametre("g");
     if (gid) return groupe(zone, uid, gid);
     var r = await sb.from("groups").select("id,name,emoji,archived_at,event:events(title,event_date)");
+    // Point « nouveau » (comme l'app) : messages des autres depuis ma dernière visite dans ce navigateur
+    var actifs = (r.data || []).filter(function (g) { return !g.archived_at; });
+    var lus = luLe(), maintenant = new Date().toISOString(), nonLus = {};
+    actifs.forEach(function (g) { if (!lus[g.id]) lus[g.id] = maintenant; });
+    try { localStorage.setItem("mp.lu", JSON.stringify(lus)); } catch (e) {}
+    if (actifs.length) {
+      var depuis = actifs.map(function (g) { return lus[g.id]; }).sort()[0];
+      var nv = (await sb.from("messages").select("group_id,created_at").in("group_id", actifs.map(function (g) { return g.id; }))
+        .neq("sender_id", uid).is("deleted_at", null).gt("created_at", depuis).limit(1000)).data || [];
+      nv.forEach(function (m) { if (m.created_at > lus[m.group_id]) nonLus[m.group_id] = (nonLus[m.group_id] || 0) + 1; });
+    }
     vide(zone);
     zone.appendChild(el("h1", null, "Mes groupes"));
     var liste = el("div", "liste");
-    (r.data || []).filter(function (g) { return !g.archived_at; }).forEach(function (g) {
+    actifs.forEach(function (g) {
       var a = el("a", "ligne"); a.href = "#g=" + g.id; a.style.color = "inherit"; a.style.textDecoration = "none";
       a.appendChild(el("div", "ico", g.emoji || "🎉"));
       var t = el("div", "grand"); t.appendChild(el("strong", null, g.name));
       t.appendChild(el("small", null, dateLongue(jour(g.event.event_date)) + " · " + jMoins(jour(g.event.event_date)))); a.appendChild(t);
+      var n = nonLus[g.id] || 0;
+      if (n) a.appendChild(el("span", "nouveaux", n > 1 ? n + " nouveaux" : "1 nouveau"));
       liste.appendChild(a);
     });
     if (!liste.firstChild) zone.appendChild(el("p", "sous", "Aucun groupe dans ce navigateur. Ouvrez le lien d'invitation reçu par message."));
     else zone.appendChild(liste);
   }
 
+  function luLe() { try { return JSON.parse(localStorage.getItem("mp.lu") || "{}"); } catch (e) { return {}; } }
+  function marquerLu(gid) { var l = luLe(); l[gid] = new Date().toISOString(); try { localStorage.setItem("mp.lu", JSON.stringify(l)); } catch (e) {} }
+
   async function groupe(zone, uid, gid) {
-    memoriser(gid);
+    memoriser(gid); marquerLu(gid);
     var g = (await sb.from("groups").select("id,name,emoji,event:events(kind,title,event_date)").eq("id", gid).maybeSingle()).data;
     vide(zone);
     if (!g) { zone.appendChild(el("p", "sous", "Ce groupe ne vous est pas (ou plus) ouvert.")); return; }
@@ -155,7 +171,7 @@
     var membres = (await sb.from("group_members").select("profile_id,status").eq("group_id", gid).eq("status", "active")).data || [];
     zone.appendChild(el("p", "sous", membres.length + (membres.length > 1 ? " membres · " : " membre · ") + dateLongue(d) + " · " + jMoins(d)));
     var noms = {}; var ids = membres.map(function (m) { return m.profile_id; });
-    if (ids.length) ((await sb.from("profiles").select("id,first_name,last_name").in("id", ids)).data || []).forEach(function (p) { noms[p.id] = [p.first_name, p.last_name].filter(Boolean).join(" ") || "Un proche"; });
+    if (ids.length) ((await sb.from("profiles").select("id,first_name,last_name,avatar_path").in("id", ids)).data || []).forEach(function (p) { noms[p.id] = [p.first_name, p.last_name].filter(Boolean).join(" ") || "Un proche"; AVATARS[p.id] = p.avatar_path || null; });
 
     // Groupe allégé (9/11/2026, comme l'app) : cadeau, organisation et Secret Santa passent par le « + »
     var taches = (await sb.from("group_tasks").select("kind,assignee_id").eq("group_id", gid)).data || [];
@@ -261,6 +277,19 @@
     return PHOTOS[chemin];
   }
 
+  // Photo de l'auteur à côté de la dernière bulle d'une série (comme l'app), sinon ses initiales
+  var AVATARS = {}, CARTES = {};
+  function avatar(pid, nom) {
+    var a = el("span", "av-auteur", initiales(nom));
+    var chemin = AVATARS[pid];
+    if (chemin) {
+      if (!CARTES[chemin]) CARTES[chemin] = sb.storage.from("cartes").download(chemin)
+        .then(function (r) { return r.data ? URL.createObjectURL(r.data) : null; });
+      CARTES[chemin].then(function (url) { if (url) { vide(a); var i = el("img"); i.src = url; i.alt = ""; a.appendChild(i); } });
+    }
+    return a;
+  }
+
   async function dessinerFil(filZone, uid, gid, noms) {
     var r = await sb.from("messages").select("id,kind,body,sender_id,ref_id,created_at,deleted_at,photo_path,link_url,link_title,link_description,link_site,link_image_path")
       .eq("group_id", gid).order("created_at", { ascending: false }).limit(300);
@@ -277,8 +306,11 @@
     var bas = filZone.scrollHeight - filZone.scrollTop - filZone.clientHeight < 40;
     vide(filZone);
     function heure(m) { return new Date(m.created_at).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); }
-    fil.forEach(function (m) {
+    marquerLu(gid);
+    fil.forEach(function (m, i) {
       var mien = m.sender_id === uid;
+      var suivant = fil[i + 1];
+      var finSerie = !suivant || suivant.kind !== "text" || suivant.sender_id !== m.sender_id;
       if (m.kind === "text") {
         var ligne = el("div", "bulle-ligne" + (mien ? " mien" : ""));
         var bulle = el("div", "bulle" + (mien ? " mien" : ""));
@@ -311,7 +343,12 @@
         if (!m.photo_path || m.body || m.deleted_at)
           bulle.appendChild(m.deleted_at ? el("div", "efface", "Message supprimé") : avecLiens(m.body));
         bulle.appendChild(el("small", null, heure(m)));
-        ligne.appendChild(bulle);
+        if (mien) ligne.appendChild(bulle);
+        else {
+          var rang = el("div", "rang");
+          rang.appendChild(finSerie ? avatar(m.sender_id, noms[m.sender_id]) : el("span", "av-auteur vide"));
+          rang.appendChild(bulle); ligne.appendChild(rang);
+        }
         var mc = coeurs.filter(function (c) { return c.message_id === m.id; });
         if (!m.deleted_at) {
           var outils = el("div", "outils");

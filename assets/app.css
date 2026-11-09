@@ -95,3 +95,12 @@ main.app h1 { font-size: 36px; line-height: 1.1; }
 .menu-plus button + button { border-top: 1px solid rgba(127,127,127,.2); }
 .menu-plus button:disabled { opacity: .45; cursor: default; }
 .menu-plus.cache { display: none; }
+
+/* Point « nouveau » et photo de l'auteur (9/11/2026, comme l'app) */
+.ligne .nouveaux { margin-left: auto; background: var(--rose); color: #fff; font-size: 12px; font-weight: 600; border-radius: 10px; padding: 2px 8px; white-space: nowrap; }
+.rang { display: flex; align-items: flex-end; gap: 6px; max-width: 100%; }
+.rang .bulle { max-width: calc(78% - 34px); }
+.av-auteur { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--nuit, #0D0C22); color: #fff; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.av-auteur.vide { background: none; }
+.av-auteur img { width: 100%; height: 100%; object-fit: cover; }
+.bulle-ligne:not(.mien) .reactions, .bulle-ligne:not(.mien) .outils { margin-left: 34px; }
