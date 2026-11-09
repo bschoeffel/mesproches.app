@@ -193,7 +193,7 @@
     // Envies publiées dans le groupe
     var publiees = ((await sb.from("group_wishes").select("wish_id").eq("group_id", gid)).data || []).map(function (x) { return x.wish_id; });
     if (publiees.length) {
-      var envies = (await sb.from("wishes").select("id,title,url").in("id", publiees)).data || [];
+      var envies = (await sb.from("wishes").select("id,title,url,price_cents").in("id", publiees)).data || [];
       var resas = (await sb.from("wish_reservations").select("wish_id,reserved_by").in("wish_id", publiees)).data || [];
       zone.appendChild(el("p", "titre-section", "Envies partagées"));
       zone.appendChild(listeEnvies(envies, resas, uid, function () { groupe(zone, uid, gid); }, gid));
@@ -321,7 +321,13 @@
       var l = el("div", "ligne");
       var t = el("div", "grand"); var titre = el(w.url ? "a" : "span", null, w.title);
       if (w.url) { titre.href = w.url; titre.target = "_blank"; titre.rel = "noopener"; titre.style.color = "inherit"; }
-      t.appendChild(titre); l.appendChild(t);
+      t.appendChild(titre);
+      // Prix (9/11/2026), s'il est connu
+      if (w.price_cents != null) {
+        var c = w.price_cents, e = Math.floor(c / 100), r = c % 100;
+        t.appendChild(el("small", "prix", e + (r ? "," + (r < 10 ? "0" : "") + r : "") + " €"));
+      }
+      l.appendChild(t);
       if (r && r.reserved_by === uid) {
         var b1 = el("button", "lien-rose", "Pris par vous");
         b1.onclick = async function () { await sb.from("wish_reservations").delete().eq("wish_id", w.id).eq("reserved_by", uid); recharger(); };
@@ -363,7 +369,7 @@
       env.appendChild(p);
       zone.appendChild(env);
       if (x.receiver_profile) {
-        var envies = (await sb.from("wishes").select("id,title,url").eq("owner_id", x.receiver_profile)).data || [];
+        var envies = (await sb.from("wishes").select("id,title,url,price_cents").eq("owner_id", x.receiver_profile)).data || [];
         if (envies.length) {
           var resas = (await sb.from("wish_reservations").select("wish_id,reserved_by").in("wish_id", envies.map(function (w) { return w.id; }))).data || [];
           zone.appendChild(el("p", "titre-section", "Ses envies"));
@@ -386,7 +392,7 @@
     if (r.error) return pasValable(zone);
     var proprio = r.data;
     var p = (await sb.from("profiles").select("first_name,last_name").eq("id", proprio).single()).data || {};
-    var liste = (await sb.from("wishes").select("id,title,url").eq("owner_id", proprio).order("created_at", { ascending: false })).data || [];
+    var liste = (await sb.from("wishes").select("id,title,url,price_cents").eq("owner_id", proprio).order("created_at", { ascending: false })).data || [];
     var resas = liste.length ? (await sb.from("wish_reservations").select("wish_id,reserved_by").in("wish_id", liste.map(function (w) { return w.id; }))).data || [] : [];
     vide(zone);
     zone.appendChild(el("h1", null, "Les envies de " + (p.first_name || "votre proche")));
