@@ -19,6 +19,13 @@
           },
           {
             "/": "/envies/*"
+          },
+          {
+            "/": "/rejoindre",
+            "comment": "Invitation dans un groupe (jeton après le #, O17)"
+          },
+          {
+            "/": "/rejoindre/*"
           }
         ]
       }

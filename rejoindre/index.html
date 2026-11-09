@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mes Proches</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<main>
+  <img class="icone" src="/assets/icone.png" alt="Icône de Mes Proches">
+  <h1>Mes Proches</h1>
+
+  <div class="carte" id="fiche" hidden>
+    <p>On vous invite dans un groupe</p>
+    <p class="nom" id="nom">pour préparer une surprise</p>
+  </div>
+
+  <div class="carte">
+    <h2>Ouvrez ce lien sur un iPhone où Mes Proches est installée</h2>
+    <p>Le groupe s'ouvre alors dans Mes Proches : vous préparez ensemble, et la personne fêtée n'en saura rien. Mes Proches est en bêta : pour l'essayer, inscrivez-vous sur la liste d'attente.</p>
+  </div>
+
+  <a class="bouton" href="/#liste-attente">Rejoindre la liste d'attente</a>
+
+  <p class="pied"><a href="/">mesproches.app</a> · Le groupe ne s'affiche que dans l'app, pour ceux qui ont reçu ce lien.</p>
+</main>
+<script>
+// Le jeton est après le « # » : il n'est jamais envoyé à ce site, seule l'app le lit.
+document.getElementById("fiche").hidden = false;
+</script>
+</body>
+</html>
