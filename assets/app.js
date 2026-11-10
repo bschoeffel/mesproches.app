@@ -229,7 +229,7 @@
     var publiees = ((await sb.from("group_wishes").select("wish_id").eq("group_id", gid)).data || []).map(function (x) { return x.wish_id; });
     if (publiees.length) {
       var envies = (await sb.from("wishes").select("id,title,url,price_cents").in("id", publiees)).data || [];
-      var resas = (await sb.from("wish_reservations").select("wish_id,reserved_by").in("wish_id", publiees)).data || [];
+      var resas = (await sb.rpc("wish_takes", { p_wishes: publiees })).data || [];
       zone.appendChild(el("p", "titre-section", "Envies partagées"));
       zone.appendChild(listeEnvies(envies, resas, uid, function () { groupe(zone, uid, gid); }, gid));
     }
@@ -654,7 +654,7 @@
       if (x.receiver_profile) {
         var envies = (await sb.from("wishes").select("id,title,url,price_cents").eq("owner_id", x.receiver_profile)).data || [];
         if (envies.length) {
-          var resas = (await sb.from("wish_reservations").select("wish_id,reserved_by").in("wish_id", envies.map(function (w) { return w.id; }))).data || [];
+          var resas = (await sb.rpc("wish_takes", { p_wishes: envies.map(function (w) { return w.id; }) })).data || [];
           zone.appendChild(el("p", "titre-section", "Ses envies"));
           zone.appendChild(listeEnvies(envies, resas, uid, function () { santa(zone, uid, gid, tirage, nomGroupe); }));
         }
@@ -676,7 +676,7 @@
     var proprio = r.data;
     var p = (await sb.from("profiles").select("first_name,last_name").eq("id", proprio).single()).data || {};
     var liste = (await sb.from("wishes").select("id,title,url,price_cents").eq("owner_id", proprio).order("created_at", { ascending: false })).data || [];
-    var resas = liste.length ? (await sb.from("wish_reservations").select("wish_id,reserved_by").in("wish_id", liste.map(function (w) { return w.id; }))).data || [] : [];
+    var resas = liste.length ? (await sb.rpc("wish_takes", { p_wishes: liste.map(function (w) { return w.id; }) })).data || [] : [];
     vide(zone);
     zone.appendChild(el("h1", null, "Les envies de " + (p.first_name || "votre proche")));
     zone.appendChild(el("p", "sous", "« Je le prends » réserve une envie pour les autres. " + (p.first_name || "La personne") + " ne voit jamais ce qui est pris."));
