@@ -65,7 +65,7 @@
       if (d.photo) { var im = el("img", "photo-groupe"); im.alt = ""; im.src = d.photo; c.replaceChild(im, icone); }
       if (d.description) { var p = el("p", "description-groupe", d.description); c.replaceChild(p, accueil); }
     }).catch(function () {});
-    c.appendChild(el("p", "note", g.members + (g.members > 1 ? " membres · " : " membre · ") + dateLongue(jour(g.event_date)) + " · " + jMoins(jour(g.event_date))));
+    c.appendChild(el("p", "note", g.members + (g.members > 1 ? " participants · " : " participant · ") + dateLongue(jour(g.event_date)) + " · " + jMoins(jour(g.event_date))));
     zone.appendChild(c);
 
     var profil = await monProfil(uid);
@@ -80,7 +80,7 @@
     var tel = el("input"); tel.type = "tel"; tel.autocomplete = "tel"; tel.inputMode = "tel"; tel.placeholder = "06 12 34 56 78";
     bTel.appendChild(tel); form.appendChild(bTel);
     form.appendChild(el("p", "note", "Ceux qui vous invitent vous reconnaîtront tout de suite dans leurs contacts."));
-    form.appendChild(el("p", "note", "Les membres verront votre prénom et votre nom. Votre numéro n'est jamais montré : il sert seulement à vous reconnaître. Pas de mot de passe."));
+    form.appendChild(el("p", "note", "Les participants verront votre prénom et votre nom. Votre numéro n'est jamais montré : il sert seulement à vous reconnaître. Pas de mot de passe."));
     var bouton = el("button", "bouton", "Rejoindre l'événement");
     bouton.style.marginTop = "18px";
     var err = el("p", "erreur cache");
@@ -207,7 +207,7 @@
 
     var membres = (await sb.from("group_members").select("profile_id,status,role").eq("group_id", gid).eq("status", "active")).data || [];
     var admin = membres.some(function (m) { return m.profile_id === uid && m.role === "admin"; });
-    zone.appendChild(el("p", "sous", membres.length + (membres.length > 1 ? " membres · " : " membre · ") + dateLongue(d) + " · " + jMoins(d)));
+    zone.appendChild(el("p", "sous", membres.length + (membres.length > 1 ? " participants · " : " participant · ") + dateLongue(d) + " · " + jMoins(d)));
     if (g.description) zone.appendChild(el("p", "description-groupe", g.description));
     if (admin) {
       var mod = el("a", "lien-modifier", "✎ Modifier l'événement"); mod.href = "#";
@@ -330,7 +330,7 @@
       c.appendChild(i); zone.appendChild(c); return i;
     }
     var nom = champ("Nom de l'événement", g.name, false, 80);
-    var desc = champ("Description · visible de tous les membres", g.description, true, 500);
+    var desc = champ("Description · visible de tous les participants", g.description, true, 500);
     var b = el("button", "bouton bouton-sombre", "Enregistrer");
     var erreur = el("p", "note");
     b.onclick = async function () {
