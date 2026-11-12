@@ -612,7 +612,7 @@
       }
       l.appendChild(t);
       if (r && r.reserved_by === uid) {
-        var b1 = el("button", "lien-rose", "Pris par vous");
+        var b1 = el("button", "lien-rose", "Vous le prenez");
         b1.onclick = async function () { await sb.from("wish_reservations").delete().eq("wish_id", w.id).eq("reserved_by", uid); recharger(); };
         l.appendChild(b1);
       } else if (r) {
@@ -620,11 +620,8 @@
       } else {
         var b2 = el("button", "lien-rose", "Je le prends");
         b2.onclick = async function () {
+          // Rien dans la discussion : personne ne sait qui a pris quoi (12/11/2026)
           await sb.from("wish_reservations").insert({ wish_id: w.id, reserved_by: uid });
-          if (gid) {
-            var prenom = (await monProfil(uid)).first_name || "Quelqu'un";
-            await ecrire({ group_id: gid, sender_id: uid, kind: "action", body: prenom + " a réservé « " + w.title + " »", ref_id: w.id });
-          }
           recharger();
         };
         l.appendChild(b2);
